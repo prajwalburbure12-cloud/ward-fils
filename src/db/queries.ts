@@ -81,7 +81,7 @@ export async function ensurePortalDefaults() {
             phone: '',
             email: '',
             officeHours: 'Mon – Sat · 10:00 AM – 1:30 PM',
-            photoUrl: null,
+            photoUrl: '/assets/aistudio/DSC02240_fc0057be.JPG',
           },
           {
             slotOrder: 3,
@@ -100,7 +100,7 @@ export async function ensurePortalDefaults() {
             phone: '',
             email: '',
             officeHours: 'Constituency Office Hours · Mon – Sat',
-            photoUrl: null,
+            photoUrl: '/assets/aistudio/Formal_Portrait_on_Blue_Background_6bd0ab4f.png',
           },
         ])
         .onConflictDoNothing();

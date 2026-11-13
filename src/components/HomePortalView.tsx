@@ -18,6 +18,7 @@ import {
 import { useLanguage } from './LanguageProvider.tsx';
 import { BeforeAfterViewer } from './BeforeAfterViewer.tsx';
 import { ANNOUNCEMENT_TYPE_LABELS, DEV_CATEGORY_LABELS } from '../lib/i18n.ts';
+import { DEFAULT_REPRESENTATIVES } from '../lib/defaults.ts';
 
 export interface PortalSettingsData {
   id: number;
@@ -108,7 +109,15 @@ export function HomePortalView({
       .then((res) => (res.ok ? res.json() : null))
       .then((json) => {
         if (active && json) {
-          setData(json);
+          setData((prev) => ({
+            ...json,
+            settings: json.settings ?? prev.settings,
+            representatives:
+              Array.isArray(json.representatives) &&
+              json.representatives.length > 0
+                ? json.representatives
+                : prev.representatives,
+          }));
         }
       })
       .catch(() => {});
@@ -117,8 +126,11 @@ export function HomePortalView({
     };
   }, []);
 
-  const { settings, representatives, developmentWorks, announcements, stats } =
-    data;
+  const { settings, developmentWorks, announcements, stats } = data;
+  const representatives =
+    data.representatives.length > 0
+      ? data.representatives
+      : DEFAULT_REPRESENTATIVES;
 
   const statItems = [
     {
@@ -280,12 +292,20 @@ export function HomePortalView({
                 {/* Exact Supplied Photograph Frame (No alteration or replacement faces) */}
                 <div className="w-full aspect-[4/3] bg-slate-100 border-b border-slate-200 flex items-center justify-center overflow-hidden">
                   {rep.photoUrl ? (
-                    <img
-                      src={rep.photoUrl}
-                      alt={name}
-                      referrerPolicy="no-referrer"
-                      className="w-full h-full object-contain bg-slate-50"
-                    />
+                    <div className="w-48 h-48 rounded-full overflow-hidden border-2 border-slate-200 bg-white shadow-xs shrink-0">
+                      <img
+                        src={rep.photoUrl}
+                        alt={name}
+                        referrerPolicy="no-referrer"
+                        className={`w-full h-full object-cover ${
+                          rep.slotOrder === 1
+                            ? 'object-[50%_20%]'
+                            : rep.slotOrder === 2
+                              ? 'object-[50%_24%]'
+                              : 'object-[50%_18%]'
+                        }`}
+                      />
+                    </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center text-center p-6 text-slate-500">
                       <div className="w-16 h-16 rounded-full bg-white border border-slate-200 flex items-center justify-center mb-3">
