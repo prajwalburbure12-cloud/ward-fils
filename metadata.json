@@ -1,0 +1,6 @@
+{
+  "name": "Ward No. 65 – Public Service & Development Portal",
+  "description": "Official public service, civic grievance redressal, and ward development portal for HDMC Ward No. 65, Hubballi, Karnataka.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
