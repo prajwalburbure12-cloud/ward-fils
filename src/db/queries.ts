@@ -62,7 +62,7 @@ export async function ensurePortalDefaults() {
             phone: '+91 9513613689',
             email: '',
             officeHours: '',
-            photoUrl: null,
+            photoUrl: '/assets/aistudio/KIR_5071_sd--_copy_dcb9ba37.jpg',
           },
           {
             slotOrder: 2,
