@@ -58,6 +58,70 @@ export async function POST(req: NextRequest) {
   }
 }
 
+export async function PATCH(req: NextRequest) {
+  try {
+    const staff = await authenticateRequest(req);
+    if (!staff || !staff.isActive) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const id = Number(body.id);
+    const titleEn = String(body.titleEn ?? '').trim();
+    const area = String(body.area ?? '').trim();
+    const category = String(body.category ?? '').trim();
+    const status = String(body.status ?? 'Completed').trim();
+    const descriptionEn = String(body.descriptionEn ?? '').trim();
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return NextResponse.json({ error: 'Invalid project ID.' }, { status: 400 });
+    }
+
+    if (!titleEn || !area || !category || !descriptionEn) {
+      return NextResponse.json(
+        { error: 'Title, area, category, and description are required.' },
+        { status: 400 }
+      );
+    }
+
+    const [updated] = await db
+      .update(developmentWorks)
+      .set({
+        titleEn,
+        titleKn: String(body.titleKn ?? '').trim() || titleEn,
+        area,
+        category,
+        status,
+        descriptionEn,
+        descriptionKn: String(body.descriptionKn ?? '').trim() || descriptionEn,
+        beforePhotoUrl:
+          body.beforePhotoUrl === undefined ? undefined : body.beforePhotoUrl || null,
+        afterPhotoUrl:
+          body.afterPhotoUrl === undefined ? undefined : body.afterPhotoUrl || null,
+        completionDate: String(body.completionDate ?? '').trim() || null,
+      })
+      .where(eq(developmentWorks.id, id))
+      .returning();
+
+    if (!updated) {
+      return NextResponse.json({ error: 'Project not found.' }, { status: 404 });
+    }
+
+    const works = await db
+      .select()
+      .from(developmentWorks)
+      .orderBy(desc(developmentWorks.createdAt));
+
+    return NextResponse.json({ work: updated, developmentWorks: works });
+  } catch (error) {
+    console.error('PATCH /api/admin/gallery failed:', error);
+    return NextResponse.json(
+      { error: 'Failed to update development work.' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(req: NextRequest) {
   try {
     const staff = await authenticateRequest(req);

@@ -28,7 +28,9 @@ interface AuthContextValue {
   firebaseUser: FirebaseUser | null;
   staffProfile: StaffProfile | null;
   loading: boolean;
+  signingIn: boolean;
   authError: string | null;
+  isAuthorizedPersonnel: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   getIdToken: () => Promise<string | null>;
@@ -39,17 +41,36 @@ const AuthContext = createContext<AuthContextValue>({
   firebaseUser: null,
   staffProfile: null,
   loading: true,
+  signingIn: false,
   authError: null,
+  isAuthorizedPersonnel: false,
   signInWithGoogle: async () => {},
   signOut: async () => {},
   getIdToken: async () => null,
   refreshProfile: async () => {},
 });
 
+function formatAuthError(err: unknown): string {
+  if (err && typeof err === 'object' && 'code' in err) {
+    const code = String((err as { code?: unknown }).code);
+    if (code === 'auth/popup-blocked') {
+      return 'Sign-in popup was blocked by your browser. Please allow popups for this site and try again.';
+    }
+    if (code === 'auth/popup-closed-by-user') {
+      return 'Google Sign-In window was closed before completing sign-in.';
+    }
+    if (code === 'auth/network-request-failed') {
+      return 'Network error while contacting Google Authentication. Please check your connection.';
+    }
+  }
+  return err instanceof Error ? err.message : 'Google Sign-In failed.';
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [staffProfile, setStaffProfile] = useState<StaffProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [signingIn, setSigningIn] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
   const syncBackendProfile = useCallback(async (fbUser: FirebaseUser) => {
@@ -57,6 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const token = await fbUser.getIdToken();
       const res = await fetch('/api/auth/me', {
         headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
@@ -89,15 +111,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithGoogle = async () => {
     setAuthError(null);
+    setSigningIn(true);
     try {
       const cred = await signInWithPopup(auth, googleAuthProvider);
       if (cred.user) {
         await syncBackendProfile(cred.user);
       }
     } catch (err) {
-      setAuthError(
-        err instanceof Error ? err.message : 'Google Sign-In was cancelled.'
-      );
+      setAuthError(formatAuthError(err));
+    } finally {
+      setSigningIn(false);
     }
   };
 
@@ -114,9 +137,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshProfile = async () => {
     if (auth.currentUser) {
-      await syncBackendProfile(auth.currentUser);
+      setLoading(true);
+      try {
+        await syncBackendProfile(auth.currentUser);
+      } finally {
+        setLoading(false);
+      }
     }
   };
+
+  const isAuthorizedPersonnel = Boolean(
+    firebaseUser &&
+      staffProfile &&
+      staffProfile.isActive &&
+      (staffProfile.role === 'admin' || staffProfile.role === 'staff')
+  );
 
   return (
     <AuthContext.Provider
@@ -124,7 +159,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         firebaseUser,
         staffProfile,
         loading,
+        signingIn,
         authError,
+        isAuthorizedPersonnel,
         signInWithGoogle,
         signOut,
         getIdToken,

@@ -1,4 +1,4 @@
-import { asc, desc, eq, sql } from 'drizzle-orm';
+import { asc, desc, eq, ilike, sql } from 'drizzle-orm';
 import { db } from './index.ts';
 import {
   announcements,
@@ -78,9 +78,9 @@ export async function ensurePortalDefaults() {
               'Coordinating road repairs, stormwater drain maintenance, cleanliness initiatives, and ward-level community infrastructure.',
             workKn:
               'ರಸ್ತೆ ದುರಸ್ತಿ, ಮಳೆನೀರು ಚರಂಡಿ ನಿರ್ವಹಣೆ, ಸ್ವಚ್ಛತಾ ಕಾರ್ಯಕ್ರಮಗಳು ಮತ್ತು ವಾರ್ಡ್ ಮಟ್ಟದ ಮೂಲಸೌಕರ್ಯ ಅಭಿವೃದ್ಧಿ.',
-            phone: '',
+            phone: '9886613689',
             email: '',
-            officeHours: 'Mon – Sat · 10:00 AM – 1:30 PM',
+            officeHours: '',
             photoUrl: '/assets/aistudio/DSC02240_fc0057be.JPG',
           },
           {
@@ -215,6 +215,10 @@ export async function getOrCreateStaffUser(
   name?: string | null
 ) {
   try {
+    const normalizedEmail = email.trim().toLowerCase();
+    const isPrimaryEmail =
+      normalizedEmail === PRIMARY_ADMIN_EMAIL.toLowerCase();
+
     const existing = await db
       .select()
       .from(users)
@@ -223,10 +227,36 @@ export async function getOrCreateStaffUser(
     if (existing.length > 0) {
       const [updated] = await db
         .update(users)
-        .set({ email, name: name ?? existing[0].name })
+        .set({
+          email: normalizedEmail,
+          name: name ?? existing[0].name,
+          role: isPrimaryEmail ? 'admin' : existing[0].role,
+          isActive: isPrimaryEmail ? true : existing[0].isActive,
+        })
         .where(eq(users.uid, uid))
         .returning();
       return updated;
+    }
+
+    // Check if an Administrator pre-invited this email before first Google login
+    const invited = await db
+      .select()
+      .from(users)
+      .where(ilike(users.email, normalizedEmail));
+
+    if (invited.length > 0) {
+      const [linked] = await db
+        .update(users)
+        .set({
+          uid,
+          email: normalizedEmail,
+          name: name ?? invited[0].name,
+          role: isPrimaryEmail ? 'admin' : invited[0].role,
+          isActive: isPrimaryEmail ? true : invited[0].isActive,
+        })
+        .where(eq(users.id, invited[0].id))
+        .returning();
+      return linked;
     }
 
     const adminCountResult = await db
@@ -235,22 +265,20 @@ export async function getOrCreateStaffUser(
       .where(eq(users.role, 'admin'));
     const adminCount = Number(adminCountResult[0]?.count ?? 0);
 
-    const isPrimaryAdmin =
-      email.toLowerCase() === PRIMARY_ADMIN_EMAIL.toLowerCase() ||
-      adminCount === 0;
+    const isPrimaryAdmin = isPrimaryEmail || adminCount === 0;
 
     const [created] = await db
       .insert(users)
       .values({
         uid,
-        email,
+        email: normalizedEmail,
         name: name ?? null,
         role: isPrimaryAdmin ? 'admin' : 'staff',
         isActive: isPrimaryAdmin,
       })
       .onConflictDoUpdate({
         target: users.uid,
-        set: { email, name: name ?? null },
+        set: { email: normalizedEmail, name: name ?? null },
       })
       .returning();
 

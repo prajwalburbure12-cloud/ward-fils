@@ -56,9 +56,9 @@ export const DEFAULT_REPRESENTATIVES: RepresentativeData[] = [
       'Coordinating road repairs, stormwater drain maintenance, cleanliness initiatives, and ward-level community infrastructure.',
     workKn:
       'ರಸ್ತೆ ದುರಸ್ತಿ, ಮಳೆನೀರು ಚರಂಡಿ ನಿರ್ವಹಣೆ, ಸ್ವಚ್ಛತಾ ಕಾರ್ಯಕ್ರಮಗಳು ಮತ್ತು ವಾರ್ಡ್ ಮಟ್ಟದ ಮೂಲಸೌಕರ್ಯ ಅಭಿವೃದ್ಧಿ.',
-    phone: '',
+    phone: '9886613689',
     email: '',
-    officeHours: 'Mon – Sat · 10:00 AM – 1:30 PM',
+    officeHours: '',
     photoUrl: '/assets/aistudio/DSC02240_fc0057be.JPG',
   },
   {

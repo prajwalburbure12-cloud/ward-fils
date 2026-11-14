@@ -143,3 +143,47 @@ export async function PATCH(
     );
   }
 }
+
+export async function DELETE(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const staff = await authenticateRequest(req);
+    if (!staff || !staff.isActive) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (staff.role !== 'admin') {
+      return NextResponse.json(
+        { error: 'Forbidden: Only Administrators can delete complaint records.' },
+        { status: 403 }
+      );
+    }
+
+    const { id } = await context.params;
+    const numId = Number(id);
+    if (!Number.isInteger(numId) || numId <= 0) {
+      return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
+    }
+
+    const [deleted] = await db
+      .delete(complaints)
+      .where(eq(complaints.id, numId))
+      .returning();
+
+    if (!deleted) {
+      return NextResponse.json(
+        { error: 'Complaint not found.' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ deletedId: numId });
+  } catch (error) {
+    console.error('DELETE /api/complaints/[id] failed:', error);
+    return NextResponse.json(
+      { error: 'Failed to delete complaint.' },
+      { status: 500 }
+    );
+  }
+}
