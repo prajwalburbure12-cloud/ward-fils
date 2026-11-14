@@ -11,8 +11,130 @@ import {
 } from './schema.ts';
 import { hashPassword } from '../lib/auth-crypto.ts';
 
-export async function ensurePortalDefaults() {
-  try {
+function isMissingSchemaError(error: unknown): boolean {
+  const err = error as {
+    code?: string;
+    cause?: { code?: string };
+  };
+  const code = err?.cause?.code || err?.code || '';
+  return code === '42P01' || code === '42703';
+}
+
+async function createMissingSchemaTables() {
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS users (
+      id serial PRIMARY KEY,
+      uid text NOT NULL UNIQUE,
+      email text NOT NULL,
+      name text,
+      password_hash text,
+      role text NOT NULL DEFAULT 'staff',
+      is_active boolean NOT NULL DEFAULT true,
+      created_at timestamp NOT NULL DEFAULT now()
+    );
+  `);
+  await db.execute(sql`
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash text;
+  `);
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS representatives (
+      id serial PRIMARY KEY,
+      slot_order integer NOT NULL UNIQUE,
+      name_en text NOT NULL,
+      name_kn text NOT NULL,
+      designation_en text NOT NULL,
+      designation_kn text NOT NULL,
+      intro_en text NOT NULL,
+      intro_kn text NOT NULL,
+      work_en text NOT NULL,
+      work_kn text NOT NULL,
+      phone text,
+      email text,
+      office_hours text,
+      photo_url text,
+      updated_at timestamp NOT NULL DEFAULT now()
+    );
+  `);
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS complaints (
+      id serial PRIMARY KEY,
+      complaint_code text NOT NULL UNIQUE,
+      citizen_name text NOT NULL,
+      mobile_number text NOT NULL,
+      area_street text NOT NULL,
+      ward_number text NOT NULL DEFAULT '65',
+      category text NOT NULL,
+      description text NOT NULL,
+      landmark text,
+      media_files jsonb DEFAULT '[]'::jsonb,
+      status text NOT NULL DEFAULT 'Submitted',
+      assigned_department text,
+      latest_update text,
+      resolution_details text,
+      created_at timestamp NOT NULL DEFAULT now(),
+      updated_at timestamp NOT NULL DEFAULT now()
+    );
+  `);
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS complaint_timeline (
+      id serial PRIMARY KEY,
+      complaint_id integer NOT NULL REFERENCES complaints(id) ON DELETE CASCADE,
+      status text NOT NULL,
+      note text NOT NULL,
+      updated_by text NOT NULL,
+      created_at timestamp NOT NULL DEFAULT now()
+    );
+  `);
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS development_works (
+      id serial PRIMARY KEY,
+      title_en text NOT NULL,
+      title_kn text NOT NULL,
+      area text NOT NULL,
+      category text NOT NULL,
+      status text NOT NULL DEFAULT 'Completed',
+      description_en text NOT NULL,
+      description_kn text NOT NULL,
+      before_photo_url text,
+      after_photo_url text,
+      completion_date text,
+      created_at timestamp NOT NULL DEFAULT now()
+    );
+  `);
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS announcements (
+      id serial PRIMARY KEY,
+      title_en text NOT NULL,
+      title_kn text NOT NULL,
+      type text NOT NULL,
+      location text NOT NULL,
+      event_date text NOT NULL,
+      description_en text NOT NULL,
+      description_kn text NOT NULL,
+      photo_url text,
+      created_at timestamp NOT NULL DEFAULT now()
+    );
+  `);
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS portal_settings (
+      id integer PRIMARY KEY DEFAULT 1,
+      banner_image_url text,
+      banner_alt text,
+      office_address_en text NOT NULL,
+      office_address_kn text NOT NULL,
+      office_phone text,
+      office_email text,
+      whatsapp_number text,
+      google_maps_url text,
+      emergency_water_phone text,
+      emergency_power_phone text,
+      emergency_sanitation_phone text,
+      updated_at timestamp NOT NULL DEFAULT now()
+    );
+  `);
+}
+
+async function seedPortalDefaultsRows() {
     const existingSettings = await db
       .select()
       .from(portalSettings)
@@ -105,7 +227,27 @@ export async function ensurePortalDefaults() {
         ])
         .onConflictDoNothing();
     }
+}
+
+export async function ensurePortalDefaults() {
+  try {
+    await seedPortalDefaultsRows();
   } catch (error) {
+    if (isMissingSchemaError(error)) {
+      try {
+        await createMissingSchemaTables();
+        await seedPortalDefaultsRows();
+        return;
+      } catch (bootstrapError) {
+        console.error(
+          'Failed to initialize portal tables and defaults:',
+          bootstrapError
+        );
+        throw new Error('Failed to initialize portal defaults.', {
+          cause: bootstrapError,
+        });
+      }
+    }
     console.error('Failed to ensure portal defaults:', error);
     throw new Error('Failed to initialize portal defaults.', { cause: error });
   }
@@ -209,51 +351,70 @@ export async function getPublicPortalData() {
   }
 }
 
+async function seedAdminLoginAccountsRows() {
+  const existingCountRes = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(users)
+    .where(isNotNull(users.passwordHash));
+
+  if (Number(existingCountRes[0]?.count ?? 0) > 0) {
+    return;
+  }
+
+  const adminPass = process.env.WARD65_ADMIN_PASSWORD || 'Ward65@Admin';
+  const team1Pass = process.env.WARD65_TEAM1_PASSWORD || 'Ward65@Team1';
+  const team2Pass = process.env.WARD65_TEAM2_PASSWORD || 'Ward65@Team2';
+
+  await db
+    .insert(users)
+    .values([
+      {
+        uid: 'login:ward65admin',
+        email: 'ward65admin',
+        name: 'Ward 65 Admin',
+        passwordHash: hashPassword(adminPass),
+        role: 'admin',
+        isActive: true,
+      },
+      {
+        uid: 'login:ward65team1',
+        email: 'ward65team1',
+        name: 'Team Member 1',
+        passwordHash: hashPassword(team1Pass),
+        role: 'staff',
+        isActive: true,
+      },
+      {
+        uid: 'login:ward65team2',
+        email: 'ward65team2',
+        name: 'Team Member 2',
+        passwordHash: hashPassword(team2Pass),
+        role: 'staff',
+        isActive: true,
+      },
+    ])
+    .onConflictDoNothing();
+}
+
 export async function ensureAdminLoginAccounts() {
   try {
-    const existingCountRes = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(users)
-      .where(isNotNull(users.passwordHash));
-
-    if (Number(existingCountRes[0]?.count ?? 0) > 0) {
-      return;
-    }
-
-    const adminPass = process.env.WARD65_ADMIN_PASSWORD || 'Ward65@Admin';
-    const team1Pass = process.env.WARD65_TEAM1_PASSWORD || 'Ward65@Team1';
-    const team2Pass = process.env.WARD65_TEAM2_PASSWORD || 'Ward65@Team2';
-
-    await db
-      .insert(users)
-      .values([
-        {
-          uid: 'login:ward65admin',
-          email: 'ward65admin',
-          name: 'Ward 65 Admin',
-          passwordHash: hashPassword(adminPass),
-          role: 'admin',
-          isActive: true,
-        },
-        {
-          uid: 'login:ward65team1',
-          email: 'ward65team1',
-          name: 'Team Member 1',
-          passwordHash: hashPassword(team1Pass),
-          role: 'staff',
-          isActive: true,
-        },
-        {
-          uid: 'login:ward65team2',
-          email: 'ward65team2',
-          name: 'Team Member 2',
-          passwordHash: hashPassword(team2Pass),
-          role: 'staff',
-          isActive: true,
-        },
-      ])
-      .onConflictDoNothing();
+    await seedAdminLoginAccountsRows();
   } catch (error) {
+    if (isMissingSchemaError(error)) {
+      try {
+        await createMissingSchemaTables();
+        await seedAdminLoginAccountsRows();
+        return;
+      } catch (bootstrapError) {
+        console.error(
+          'Database bootstrap failed in ensureAdminLoginAccounts:',
+          bootstrapError
+        );
+        throw new Error('Failed to initialize Ward 65 login accounts.', {
+          cause: bootstrapError,
+        });
+      }
+    }
     console.error('Database query failed in ensureAdminLoginAccounts:', error);
     throw new Error('Failed to initialize Ward 65 login accounts.', {
       cause: error,

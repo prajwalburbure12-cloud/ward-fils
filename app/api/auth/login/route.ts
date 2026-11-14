@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ilike } from 'drizzle-orm';
-import { db } from '../../../../src/db/index.ts';
+import { db, isDbConfigured } from '../../../../src/db/index.ts';
 import { users } from '../../../../src/db/schema.ts';
 import { ensureAdminLoginAccounts } from '../../../../src/db/queries.ts';
 import {
@@ -14,6 +14,16 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
+    if (!isDbConfigured()) {
+      return NextResponse.json(
+        {
+          error:
+            'Database is not connected on this server. Add a Postgres database (e.g. Neon) in Vercel Storage and redeploy.',
+        },
+        { status: 503 }
+      );
+    }
+
     await ensureAdminLoginAccounts();
 
     const body = await req.json();
@@ -121,15 +131,11 @@ export async function POST(req: NextRequest) {
       ''
     ).toLowerCase();
 
-    if (
-      !process.env.SQL_HOST ||
-      !process.env.SQL_USER ||
-      !process.env.SQL_DB_NAME
-    ) {
+    if (!isDbConfigured()) {
       return NextResponse.json(
         {
           error:
-            'Database connection is not configured on this live deployment.',
+            'Database is not connected on this server. Add a Postgres database (e.g. Neon) in Vercel Storage and redeploy.',
         },
         { status: 503 }
       );
