@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { eq } from 'drizzle-orm';
 import { db } from '../../../../src/db/index.ts';
-import { portalSettings } from '../../../../src/db/schema.ts';
+import {
+  portalSettings,
+  type HeroSlideItem,
+} from '../../../../src/db/schema.ts';
 import { authenticateRequest } from '../../../../src/lib/auth-server.ts';
 
 export const dynamic = 'force-dynamic';
@@ -21,6 +24,21 @@ export async function PATCH(req: NextRequest) {
 
     const body = await req.json();
 
+    let sanitizedHeroSlides: HeroSlideItem[] | undefined;
+    if (Array.isArray(body.heroSlides)) {
+      sanitizedHeroSlides = body.heroSlides
+        .slice(0, 12)
+        .map((item: Partial<HeroSlideItem>) => ({
+          src: String(item?.src ?? '').trim(),
+          titleEn: String(item?.titleEn ?? '').trim() || 'Ward No. 65 Update',
+          titleKn:
+            String(item?.titleKn ?? '').trim() ||
+            String(item?.titleEn ?? '').trim() ||
+            'ವಾರ್ಡ್ ನಂ. 65 ಮಾಹಿತಿ',
+        }))
+        .filter((item: HeroSlideItem) => Boolean(item.src));
+    }
+
     const [updated] = await db
       .update(portalSettings)
       .set({
@@ -30,6 +48,7 @@ export async function PATCH(req: NextRequest) {
           body.bannerAlt !== undefined
             ? String(body.bannerAlt).trim()
             : undefined,
+        heroSlides: sanitizedHeroSlides,
         officeAddressEn: String(body.officeAddressEn ?? '').trim(),
         officeAddressKn:
           String(body.officeAddressKn ?? '').trim() ||

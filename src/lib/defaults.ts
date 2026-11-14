@@ -2,11 +2,36 @@ import type {
   PortalSettingsData,
   RepresentativeData,
 } from '../components/HomePortalView.tsx';
+import type { HeroSlideItem } from '../db/schema.ts';
+
+export const DEFAULT_HERO_SLIDES: HeroSlideItem[] = [
+  {
+    src: '/assets/slideshow/ward_roads_upgrade.jpg',
+    titleEn: 'Concrete Roads & LED Lighting',
+    titleKn: 'ಕಾಂಕ್ರೀಟ್ ರಸ್ತೆಗಳು ಮತ್ತು ಎಲ್‌ಇಡಿ ದೀಪಗಳು',
+  },
+  {
+    src: '/assets/slideshow/ward_water_supply.jpg',
+    titleEn: '24x7 Drinking Water Network',
+    titleKn: '24x7 ಕುಡಿಯುವ ನೀರಿನ ಜಾಲ',
+  },
+  {
+    src: '/assets/slideshow/ward_park_clean.jpg',
+    titleEn: 'Neighborhood Parks & Walkways',
+    titleKn: 'ಬಡಾವಣೆ ಉದ್ಯಾನವನ ಮತ್ತು ವಾಕಿಂಗ್ ಟ್ರ್ಯಾಕ್',
+  },
+  {
+    src: '/assets/slideshow/ward_sanitation_drive.jpg',
+    titleEn: 'Clean Streets & Segregated Waste',
+    titleKn: 'ಸ್ವಚ್ಛ ಬೀದಿಗಳು ಮತ್ತು ತ್ಯಾಜ್ಯ ವಿಂಗಡಣೆ',
+  },
+];
 
 export const DEFAULT_PORTAL_SETTINGS: PortalSettingsData = {
   id: 1,
   bannerImageUrl: null,
   bannerAlt: 'Ward No. 65, Hubballi-Dharwad Municipal Corporation',
+  heroSlides: DEFAULT_HERO_SLIDES,
   officeAddressEn:
     'Ward No. 65 Civic Service Office, Hubballi-Dharwad Municipal Corporation, Hubballi, Karnataka 580020',
   officeAddressKn:

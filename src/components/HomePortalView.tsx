@@ -1,12 +1,15 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { AnimatePresence, motion } from 'motion/react';
 import {
   ArrowRight,
   Building2,
   Calendar,
   Camera,
+  ChevronLeft,
+  ChevronRight,
   FileText,
   Mail,
   MapPin,
@@ -18,12 +21,17 @@ import {
 import { useLanguage } from './LanguageProvider.tsx';
 import { BeforeAfterViewer } from './BeforeAfterViewer.tsx';
 import { ANNOUNCEMENT_TYPE_LABELS, DEV_CATEGORY_LABELS } from '../lib/i18n.ts';
-import { DEFAULT_REPRESENTATIVES } from '../lib/defaults.ts';
+import {
+  DEFAULT_HERO_SLIDES,
+  DEFAULT_REPRESENTATIVES,
+} from '../lib/defaults.ts';
+import type { HeroSlideItem } from '../db/schema.ts';
 
 export interface PortalSettingsData {
   id: number;
   bannerImageUrl: string | null;
   bannerAlt: string | null;
+  heroSlides?: HeroSlideItem[] | null;
   officeAddressEn: string;
   officeAddressKn: string;
   officePhone: string | null;
@@ -132,6 +140,55 @@ export function HomePortalView({
       ? data.representatives
       : DEFAULT_REPRESENTATIVES;
 
+  const heroSlides = useMemo(() => {
+    const customSlides = (settings?.heroSlides ?? []).filter(
+      (s) => s && typeof s.src === 'string' && s.src.trim().length > 0
+    );
+    if (customSlides.length > 0) {
+      return customSlides;
+    }
+
+    const dynamicSlides: HeroSlideItem[] = [];
+    for (const work of developmentWorks) {
+      const url = work.afterPhotoUrl || work.beforePhotoUrl;
+      if (url) {
+        dynamicSlides.push({
+          src: url,
+          titleEn: work.titleEn,
+          titleKn: work.titleKn || work.titleEn,
+        });
+      }
+      if (dynamicSlides.length >= 4) break;
+    }
+
+    for (const item of announcements) {
+      if (item.photoUrl && dynamicSlides.length < 6) {
+        dynamicSlides.push({
+          src: item.photoUrl,
+          titleEn: item.titleEn,
+          titleKn: item.titleKn || item.titleEn,
+        });
+      }
+    }
+
+    return [...dynamicSlides, ...DEFAULT_HERO_SLIDES];
+  }, [settings?.heroSlides, developmentWorks, announcements]);
+
+  const [slideIndex, setSlideIndex] = useState(0);
+  const [isSlidePaused, setIsSlidePaused] = useState(false);
+  const totalSlides = heroSlides.length;
+
+  useEffect(() => {
+    if (totalSlides <= 1 || isSlidePaused) return;
+    const timer = window.setInterval(() => {
+      setSlideIndex((prev) => (prev + 1) % totalSlides);
+    }, 4000);
+    return () => window.clearInterval(timer);
+  }, [totalSlides, isSlidePaused]);
+
+  const activeSlide =
+    heroSlides[slideIndex % Math.max(1, totalSlides)] ?? heroSlides[0];
+
   const statItems = [
     {
       label: t.stats.totalComplaints,
@@ -190,12 +247,12 @@ export function HomePortalView({
         ) : null}
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
-          <div className="bg-[#0B2545] text-white rounded-2xl p-8 sm:p-12 border border-[#163864] shadow-xs">
-            <div className="max-w-3xl space-y-4">
+          <div className="bg-[#0B2545] text-white rounded-2xl p-8 sm:p-10 lg:p-12 border border-[#163864] shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 lg:gap-10">
+            <div className="flex-1 min-w-0 max-w-xl space-y-4">
               <p className="text-xs sm:text-sm font-medium tracking-wide text-amber-300">
                 {t.hero.eyebrow}
               </p>
-              <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-white [text-wrap:balance]">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white [text-wrap:balance]">
                 {t.hero.title}
               </h1>
               <p className="text-lg sm:text-xl font-semibold text-slate-200">
@@ -228,6 +285,90 @@ export function HomePortalView({
                 </p>
               )}
             </div>
+
+            {/* Right-side Responsive Slideshow: Square on vertical mobile, Big Landscape Rectangle on horizontal / laptop */}
+            {activeSlide && (
+              <div
+                onMouseEnter={() => setIsSlidePaused(true)}
+                onMouseLeave={() => setIsSlidePaused(false)}
+                className="w-full max-w-[260px] aspect-square sm:max-w-none sm:w-[270px] sm:aspect-[16/10] md:w-[340px] lg:w-[460px] xl:w-[520px] shrink-0 mx-auto sm:mx-0 rounded-xl overflow-hidden border border-white/15 bg-[#081b34] relative shadow-md group"
+              >
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={`${slideIndex % totalSlides}-${activeSlide.src}`}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                    className="absolute inset-0"
+                  >
+                    <img
+                      src={activeSlide.src}
+                      alt={
+                        lang === 'kn' ? activeSlide.titleKn : activeSlide.titleEn
+                      }
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover"
+                    />
+                  </motion.div>
+                </AnimatePresence>
+
+                {/* Bottom contrast scrim & caption */}
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent pt-10 pb-3 px-3.5 flex flex-col gap-2">
+                  <p className="text-xs font-semibold text-white leading-snug line-clamp-2">
+                    {lang === 'kn' ? activeSlide.titleKn : activeSlide.titleEn}
+                  </p>
+
+                  {totalSlides > 1 && (
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1 flex-1">
+                        {heroSlides.map((slide, idx) => {
+                          const active = idx === slideIndex % totalSlides;
+                          return (
+                            <button
+                              key={`${slide.src}-${idx}`}
+                              type="button"
+                              onClick={() => setSlideIndex(idx)}
+                              aria-label={`View slide ${idx + 1}`}
+                              className={`h-1 rounded-full transition-all cursor-pointer ${
+                                active
+                                  ? 'flex-[2] bg-amber-300'
+                                  : 'flex-1 bg-white/35 hover:bg-white/60'
+                              }`}
+                            />
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSlideIndex(
+                              (prev) => (prev - 1 + totalSlides) % totalSlides
+                            )
+                          }
+                          aria-label="Previous slide"
+                          className="w-6 h-6 rounded-md bg-black/45 hover:bg-black/70 text-white flex items-center justify-center border border-white/15 transition-colors cursor-pointer"
+                        >
+                          <ChevronLeft className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSlideIndex((prev) => (prev + 1) % totalSlides)
+                          }
+                          aria-label="Next slide"
+                          className="w-6 h-6 rounded-md bg-black/45 hover:bg-black/70 text-white flex items-center justify-center border border-white/15 transition-colors cursor-pointer"
+                        >
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>

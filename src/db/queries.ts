@@ -120,6 +120,7 @@ async function createMissingSchemaTables() {
       id integer PRIMARY KEY DEFAULT 1,
       banner_image_url text,
       banner_alt text,
+      hero_slides jsonb DEFAULT '[]'::jsonb,
       office_address_en text NOT NULL,
       office_address_kn text NOT NULL,
       office_phone text,
@@ -131,6 +132,9 @@ async function createMissingSchemaTables() {
       emergency_sanitation_phone text,
       updated_at timestamp NOT NULL DEFAULT now()
     );
+  `);
+  await db.execute(sql`
+    ALTER TABLE portal_settings ADD COLUMN IF NOT EXISTS hero_slides jsonb DEFAULT '[]'::jsonb;
   `);
 }
 
@@ -147,6 +151,7 @@ async function seedPortalDefaultsRows() {
           id: 1,
           bannerImageUrl: null,
           bannerAlt: 'Ward No. 65, Hubballi-Dharwad Municipal Corporation',
+          heroSlides: [],
           officeAddressEn:
             'Ward No. 65 Civic Service Office, Hubballi-Dharwad Municipal Corporation, Hubballi, Karnataka 580020',
           officeAddressKn:

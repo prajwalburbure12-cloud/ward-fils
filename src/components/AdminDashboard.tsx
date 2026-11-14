@@ -773,7 +773,7 @@ export function AdminDashboard() {
     },
     {
       id: 'settings',
-      label: 'Banner & Contacts',
+      label: 'Slideshow, Banner & Contacts',
       icon: Settings,
       adminOnly: true,
     },

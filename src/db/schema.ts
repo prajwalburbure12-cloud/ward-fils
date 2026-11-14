@@ -15,6 +15,12 @@ export interface ComplaintMediaItem {
   dataUrl: string;
 }
 
+export interface HeroSlideItem {
+  src: string;
+  titleEn: string;
+  titleKn: string;
+}
+
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
   uid: text('uid').notNull().unique(),
@@ -120,6 +126,7 @@ export const portalSettings = pgTable('portal_settings', {
   id: integer('id').primaryKey().default(1),
   bannerImageUrl: text('banner_image_url'),
   bannerAlt: text('banner_alt'),
+  heroSlides: jsonb('hero_slides').$type<HeroSlideItem[]>().default([]),
   officeAddressEn: text('office_address_en').notNull(),
   officeAddressKn: text('office_address_kn').notNull(),
   officePhone: text('office_phone'),
