@@ -7,13 +7,8 @@ import React, {
   useEffect,
   useState,
 } from 'react';
-import {
-  onAuthStateChanged,
-  signInWithPopup,
-  signOut as firebaseSignOut,
-  type User as FirebaseUser,
-} from 'firebase/auth';
-import { auth, googleAuthProvider } from '../lib/firebase.ts';
+
+const TOKEN_STORAGE_KEY = 'w65_admin_token';
 
 export interface StaffProfile {
   id: number;
@@ -25,130 +20,153 @@ export interface StaffProfile {
 }
 
 interface AuthContextValue {
-  firebaseUser: FirebaseUser | null;
   staffProfile: StaffProfile | null;
   loading: boolean;
-  signingIn: boolean;
+  submitting: boolean;
   authError: string | null;
   isAuthorizedPersonnel: boolean;
-  signInWithGoogle: () => Promise<void>;
+  signInWithCredentials: (loginId: string, password: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   getIdToken: () => Promise<string | null>;
   refreshProfile: () => Promise<void>;
+  clearAuthError: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue>({
-  firebaseUser: null,
   staffProfile: null,
   loading: true,
-  signingIn: false,
+  submitting: false,
   authError: null,
   isAuthorizedPersonnel: false,
-  signInWithGoogle: async () => {},
+  signInWithCredentials: async () => false,
   signOut: async () => {},
   getIdToken: async () => null,
   refreshProfile: async () => {},
+  clearAuthError: () => {},
 });
 
-function formatAuthError(err: unknown): string {
-  if (err && typeof err === 'object' && 'code' in err) {
-    const code = String((err as { code?: unknown }).code);
-    if (code === 'auth/popup-blocked') {
-      return 'Sign-in popup was blocked by your browser. Please allow popups for this site and try again.';
-    }
-    if (code === 'auth/popup-closed-by-user') {
-      return 'Google Sign-In window was closed before completing sign-in.';
-    }
-    if (code === 'auth/network-request-failed') {
-      return 'Network error while contacting Google Authentication. Please check your connection.';
-    }
+function readStoredToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return window.localStorage.getItem(TOKEN_STORAGE_KEY);
+  } catch {
+    return null;
   }
-  return err instanceof Error ? err.message : 'Google Sign-In failed.';
+}
+
+function writeStoredToken(token: string | null) {
+  if (typeof window === 'undefined') return;
+  try {
+    if (token) {
+      window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
+    } else {
+      window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+    }
+  } catch {
+    // Ignore storage access errors
+  }
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [staffProfile, setStaffProfile] = useState<StaffProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [signingIn, setSigningIn] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  const syncBackendProfile = useCallback(async (fbUser: FirebaseUser) => {
+  const loadSession = useCallback(async () => {
     try {
-      const token = await fbUser.getIdToken();
+      const token = readStoredToken();
+      const headers: HeadersInit = token
+        ? { Authorization: `Bearer ${token}` }
+        : {};
       const res = await fetch('/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` },
+        headers,
         cache: 'no-store',
       });
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || 'Failed to verify staff account.');
+        setStaffProfile(null);
+        return;
       }
       const data = await res.json();
-      setStaffProfile(data.user ?? null);
-      setAuthError(null);
-    } catch (err) {
+      if (data.user) {
+        setStaffProfile(data.user);
+      } else {
+        setStaffProfile(null);
+        writeStoredToken(null);
+      }
+    } catch {
       setStaffProfile(null);
-      setAuthError(
-        err instanceof Error ? err.message : 'Authentication check failed.'
-      );
+    } finally {
+      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (fbUser) => {
-      setFirebaseUser(fbUser);
-      if (fbUser) {
-        await syncBackendProfile(fbUser);
-      } else {
-        setStaffProfile(null);
-        setAuthError(null);
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) {
+        loadSession();
       }
-      setLoading(false);
     });
-    return () => unsub();
-  }, [syncBackendProfile]);
+    return () => {
+      active = false;
+    };
+  }, [loadSession]);
 
-  const signInWithGoogle = async () => {
+  const signInWithCredentials = async (
+    loginId: string,
+    password: string
+  ): Promise<boolean> => {
     setAuthError(null);
-    setSigningIn(true);
+    setSubmitting(true);
     try {
-      const cred = await signInWithPopup(auth, googleAuthProvider);
-      if (cred.user) {
-        await syncBackendProfile(cred.user);
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ loginId, password }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setAuthError(data.error || 'Invalid Login ID or password.');
+        return false;
       }
-    } catch (err) {
-      setAuthError(formatAuthError(err));
+      if (data.token) {
+        writeStoredToken(data.token);
+      }
+      setStaffProfile(data.user ?? null);
+      return true;
+    } catch {
+      setAuthError('Unable to sign in right now. Please try again.');
+      return false;
     } finally {
-      setSigningIn(false);
+      setSubmitting(false);
     }
   };
 
   const signOut = async () => {
-    await firebaseSignOut(auth);
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch {
+      // Ignore network errors on sign out
+    }
+    writeStoredToken(null);
     setStaffProfile(null);
     setAuthError(null);
   };
 
   const getIdToken = async () => {
-    if (!auth.currentUser) return null;
-    return await auth.currentUser.getIdToken();
+    return readStoredToken();
   };
 
   const refreshProfile = async () => {
-    if (auth.currentUser) {
-      setLoading(true);
-      try {
-        await syncBackendProfile(auth.currentUser);
-      } finally {
-        setLoading(false);
-      }
-    }
+    setLoading(true);
+    await loadSession();
   };
 
+  const clearAuthError = () => setAuthError(null);
+
   const isAuthorizedPersonnel = Boolean(
-    firebaseUser &&
-      staffProfile &&
+    staffProfile &&
       staffProfile.isActive &&
       (staffProfile.role === 'admin' || staffProfile.role === 'staff')
   );
@@ -156,16 +174,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider
       value={{
-        firebaseUser,
         staffProfile,
         loading,
-        signingIn,
+        submitting,
         authError,
         isAuthorizedPersonnel,
-        signInWithGoogle,
+        signInWithCredentials,
         signOut,
         getIdToken,
         refreshProfile,
+        clearAuthError,
       }}
     >
       {children}

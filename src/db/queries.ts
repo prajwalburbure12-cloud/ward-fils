@@ -1,4 +1,4 @@
-import { asc, desc, eq, ilike, sql } from 'drizzle-orm';
+import { asc, desc, eq, isNotNull, sql } from 'drizzle-orm';
 import { db } from './index.ts';
 import {
   announcements,
@@ -9,7 +9,7 @@ import {
   representatives,
   users,
 } from './schema.ts';
-import { PRIMARY_ADMIN_EMAIL } from '../lib/constants.ts';
+import { hashPassword } from '../lib/auth-crypto.ts';
 
 export async function ensurePortalDefaults() {
   try {
@@ -209,83 +209,53 @@ export async function getPublicPortalData() {
   }
 }
 
-export async function getOrCreateStaffUser(
-  uid: string,
-  email: string,
-  name?: string | null
-) {
+export async function ensureAdminLoginAccounts() {
   try {
-    const normalizedEmail = email.trim().toLowerCase();
-    const isPrimaryEmail =
-      normalizedEmail === PRIMARY_ADMIN_EMAIL.toLowerCase();
-
-    const existing = await db
-      .select()
-      .from(users)
-      .where(eq(users.uid, uid));
-
-    if (existing.length > 0) {
-      const [updated] = await db
-        .update(users)
-        .set({
-          email: normalizedEmail,
-          name: name ?? existing[0].name,
-          role: isPrimaryEmail ? 'admin' : existing[0].role,
-          isActive: isPrimaryEmail ? true : existing[0].isActive,
-        })
-        .where(eq(users.uid, uid))
-        .returning();
-      return updated;
-    }
-
-    // Check if an Administrator pre-invited this email before first Google login
-    const invited = await db
-      .select()
-      .from(users)
-      .where(ilike(users.email, normalizedEmail));
-
-    if (invited.length > 0) {
-      const [linked] = await db
-        .update(users)
-        .set({
-          uid,
-          email: normalizedEmail,
-          name: name ?? invited[0].name,
-          role: isPrimaryEmail ? 'admin' : invited[0].role,
-          isActive: isPrimaryEmail ? true : invited[0].isActive,
-        })
-        .where(eq(users.id, invited[0].id))
-        .returning();
-      return linked;
-    }
-
-    const adminCountResult = await db
+    const existingCountRes = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(users)
-      .where(eq(users.role, 'admin'));
-    const adminCount = Number(adminCountResult[0]?.count ?? 0);
+      .where(isNotNull(users.passwordHash));
 
-    const isPrimaryAdmin = isPrimaryEmail || adminCount === 0;
+    if (Number(existingCountRes[0]?.count ?? 0) > 0) {
+      return;
+    }
 
-    const [created] = await db
+    const adminPass = process.env.WARD65_ADMIN_PASSWORD || 'Ward65@Admin';
+    const team1Pass = process.env.WARD65_TEAM1_PASSWORD || 'Ward65@Team1';
+    const team2Pass = process.env.WARD65_TEAM2_PASSWORD || 'Ward65@Team2';
+
+    await db
       .insert(users)
-      .values({
-        uid,
-        email: normalizedEmail,
-        name: name ?? null,
-        role: isPrimaryAdmin ? 'admin' : 'staff',
-        isActive: isPrimaryAdmin,
-      })
-      .onConflictDoUpdate({
-        target: users.uid,
-        set: { email: normalizedEmail, name: name ?? null },
-      })
-      .returning();
-
-    return created;
+      .values([
+        {
+          uid: 'login:ward65admin',
+          email: 'ward65admin',
+          name: 'Ward 65 Admin',
+          passwordHash: hashPassword(adminPass),
+          role: 'admin',
+          isActive: true,
+        },
+        {
+          uid: 'login:ward65team1',
+          email: 'ward65team1',
+          name: 'Team Member 1',
+          passwordHash: hashPassword(team1Pass),
+          role: 'staff',
+          isActive: true,
+        },
+        {
+          uid: 'login:ward65team2',
+          email: 'ward65team2',
+          name: 'Team Member 2',
+          passwordHash: hashPassword(team2Pass),
+          role: 'staff',
+          isActive: true,
+        },
+      ])
+      .onConflictDoNothing();
   } catch (error) {
-    console.error('Database query failed in getOrCreateStaffUser:', error);
-    throw new Error('Failed to synchronize staff user account.', {
+    console.error('Database query failed in ensureAdminLoginAccounts:', error);
+    throw new Error('Failed to initialize Ward 65 login accounts.', {
       cause: error,
     });
   }
