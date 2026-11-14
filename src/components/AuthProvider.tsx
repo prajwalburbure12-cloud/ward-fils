@@ -72,10 +72,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const sessionTokenRef = React.useRef<string | null>(null);
 
   const loadSession = useCallback(async () => {
     try {
-      const token = readStoredToken();
+      const token = sessionTokenRef.current ?? readStoredToken();
+      sessionTokenRef.current = token;
       const headers: HeadersInit = token
         ? { Authorization: `Bearer ${token}` }
         : {};
@@ -92,6 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setStaffProfile(data.user);
       } else {
         setStaffProfile(null);
+        sessionTokenRef.current = null;
         writeStoredToken(null);
       }
     } catch {
@@ -131,6 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
       if (data.token) {
+        sessionTokenRef.current = data.token;
         writeStoredToken(data.token);
       }
       setStaffProfile(data.user ?? null);
@@ -149,13 +153,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       // Ignore network errors on sign out
     }
+    sessionTokenRef.current = null;
     writeStoredToken(null);
     setStaffProfile(null);
     setAuthError(null);
   };
 
   const getIdToken = async () => {
-    return readStoredToken();
+    return sessionTokenRef.current ?? readStoredToken();
   };
 
   const refreshProfile = async () => {

@@ -6,7 +6,6 @@ import {
 } from 'next/font/google';
 import './globals.css';
 import { LanguageProvider } from '../src/components/LanguageProvider.tsx';
-import { AuthProvider } from '../src/components/AuthProvider.tsx';
 import { SiteShell } from '../src/components/SiteShell.tsx';
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -58,9 +57,7 @@ export default function RootLayout({
     >
       <body suppressHydrationWarning className="font-sans antialiased">
         <LanguageProvider>
-          <AuthProvider>
-            <SiteShell>{children}</SiteShell>
-          </AuthProvider>
+          <SiteShell>{children}</SiteShell>
         </LanguageProvider>
       </body>
     </html>

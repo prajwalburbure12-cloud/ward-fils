@@ -96,19 +96,87 @@ export async function POST(req: NextRequest) {
       isActive: user.isActive,
     };
 
+    const isProd = process.env.NODE_ENV === 'production';
     const res = NextResponse.json({ token, user: sanitizedUser });
     res.cookies.set(SESSION_COOKIE_NAME, token, {
       httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      sameSite: isProd ? 'none' : 'lax',
+      secure: isProd,
       path: '/',
       maxAge: 7 * 24 * 60 * 60,
     });
     return res;
   } catch (error) {
     console.error('POST /api/auth/login failed:', error);
+
+    const err = error as {
+      code?: string;
+      message?: string;
+      cause?: { code?: string; message?: string };
+    };
+    const rootCode = err?.cause?.code || err?.code || '';
+    const rootMessage = (
+      err?.cause?.message ||
+      err?.message ||
+      ''
+    ).toLowerCase();
+
+    if (
+      !process.env.SQL_HOST ||
+      !process.env.SQL_USER ||
+      !process.env.SQL_DB_NAME
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Database connection is not configured on this live deployment.',
+        },
+        { status: 503 }
+      );
+    }
+
+    if (rootCode === '42703' || rootCode === '42P01') {
+      return NextResponse.json(
+        {
+          error:
+            'Database schema is out of sync. Please update the database schema.',
+        },
+        { status: 500 }
+      );
+    }
+
+    if (
+      rootCode === 'ETIMEDOUT' ||
+      rootMessage.includes('timeout') ||
+      rootMessage.includes('timed out')
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Database is waking up from idle. Please wait a few seconds and click Sign In again.',
+        },
+        { status: 503 }
+      );
+    }
+
+    if (
+      rootCode === 'ECONNREFUSED' ||
+      rootCode === 'ENOENT' ||
+      rootCode === '28P01' ||
+      rootCode === '28000'
+    ) {
+      return NextResponse.json(
+        {
+          error: `Unable to reach the ward database (${rootCode}). Please try again shortly.`,
+        },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
-      { error: 'Sign-in failed. Please try again.' },
+      {
+        error: `Sign-in failed (${rootCode || 'INTERNAL_ERROR'}). Please try again.`,
+      },
       { status: 500 }
     );
   }
