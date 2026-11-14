@@ -527,7 +527,145 @@ export function HomePortalView({
         </div>
       </section>
 
-      {/* 4. RESIDENT SERVICES DIRECTORY */}
+      {/* 4. LATEST UPDATES & ANNOUNCEMENTS PREVIEW */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#0B2545]">
+              {t.updates.heading}
+            </h2>
+            <p className="text-sm text-slate-600 mt-1">{t.updates.subheading}</p>
+          </div>
+          <Link
+            href="/updates"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#0B2545] hover:underline whitespace-nowrap shrink-0"
+          >
+            <span>All Announcements</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+
+        {announcements.length === 0 ? (
+          <div className="p-8 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-600">
+            {t.updates.empty}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {announcements.slice(0, 3).map((item) => {
+              const title = lang === 'kn' ? item.titleKn : item.titleEn;
+              const desc =
+                lang === 'kn' ? item.descriptionKn : item.descriptionEn;
+              return (
+                <article
+                  key={item.id}
+                  className="bg-white border border-slate-200 rounded-xl overflow-hidden flex flex-col"
+                >
+                  {item.photoUrl && (
+                    <img
+                      src={item.photoUrl}
+                      alt={title}
+                      referrerPolicy="no-referrer"
+                      className="w-full h-48 object-cover border-b border-slate-200"
+                    />
+                  )}
+                  <div className="p-5 space-y-2 flex-1">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                      <span className="font-semibold text-[#D97706]">
+                        {ANNOUNCEMENT_TYPE_LABELS[item.type]?.[lang] ??
+                          item.type}
+                      </span>
+                      <span aria-hidden="true">·</span>
+                      <span className="inline-flex items-center gap-1">
+                        <Calendar className="w-3.5 h-3.5" />
+                        {item.eventDate}
+                      </span>
+                    </div>
+                    <h3 className="text-base font-bold text-slate-900">
+                      {title}
+                    </h3>
+                    <p className="text-xs font-medium text-slate-500 flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5" />
+                      <span>{item.location}</span>
+                    </p>
+                    <p className="text-sm text-slate-600 leading-relaxed pt-1">
+                      {desc}
+                    </p>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* 5. WARD DEVELOPMENT GALLERY PREVIEW */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#0B2545]">
+              {t.gallery.heading}
+            </h2>
+            <p className="text-sm text-slate-600 mt-1">{t.gallery.subheading}</p>
+          </div>
+          <Link
+            href="/gallery"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#0B2545] hover:underline whitespace-nowrap shrink-0"
+          >
+            <span>View Full Gallery</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+
+        {developmentWorks.length === 0 ? (
+          <div className="p-8 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-600">
+            {t.gallery.empty}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {developmentWorks.slice(0, 3).map((work) => {
+              const title = lang === 'kn' ? work.titleKn : work.titleEn;
+              const desc =
+                lang === 'kn' ? work.descriptionKn : work.descriptionEn;
+              return (
+                <article
+                  key={work.id}
+                  className="bg-white border border-slate-200 rounded-xl p-4 space-y-3"
+                >
+                  <BeforeAfterViewer
+                    title={title}
+                    beforePhotoUrl={work.beforePhotoUrl}
+                    afterPhotoUrl={work.afterPhotoUrl}
+                  />
+                  <div className="space-y-1.5 pt-1">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                      <span className="font-semibold text-[#0B2545]">
+                        {work.area}
+                      </span>
+                      <span aria-hidden="true">·</span>
+                      <span>
+                        {DEV_CATEGORY_LABELS[work.category]?.[lang] ??
+                          work.category}
+                      </span>
+                      <span aria-hidden="true">·</span>
+                      <span className="text-[#15803D] font-medium">
+                        {work.status}
+                      </span>
+                    </div>
+                    <h3 className="text-base font-bold text-slate-900">
+                      {title}
+                    </h3>
+                    <p className="text-sm text-slate-600 line-clamp-3">
+                      {desc}
+                    </p>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* 6. RESIDENT SERVICES DIRECTORY */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#0B2545] mb-6">
           {t.quickServices.heading}
@@ -609,144 +747,6 @@ export function HomePortalView({
             </div>
           </Link>
         </div>
-      </section>
-
-      {/* 5. WARD DEVELOPMENT GALLERY PREVIEW */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#0B2545]">
-              {t.gallery.heading}
-            </h2>
-            <p className="text-sm text-slate-600 mt-1">{t.gallery.subheading}</p>
-          </div>
-          <Link
-            href="/gallery"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#0B2545] hover:underline whitespace-nowrap shrink-0"
-          >
-            <span>View Full Gallery</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-
-        {developmentWorks.length === 0 ? (
-          <div className="p-8 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-600">
-            {t.gallery.empty}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {developmentWorks.slice(0, 3).map((work) => {
-              const title = lang === 'kn' ? work.titleKn : work.titleEn;
-              const desc =
-                lang === 'kn' ? work.descriptionKn : work.descriptionEn;
-              return (
-                <article
-                  key={work.id}
-                  className="bg-white border border-slate-200 rounded-xl p-4 space-y-3"
-                >
-                  <BeforeAfterViewer
-                    title={title}
-                    beforePhotoUrl={work.beforePhotoUrl}
-                    afterPhotoUrl={work.afterPhotoUrl}
-                  />
-                  <div className="space-y-1.5 pt-1">
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                      <span className="font-semibold text-[#0B2545]">
-                        {work.area}
-                      </span>
-                      <span aria-hidden="true">·</span>
-                      <span>
-                        {DEV_CATEGORY_LABELS[work.category]?.[lang] ??
-                          work.category}
-                      </span>
-                      <span aria-hidden="true">·</span>
-                      <span className="text-[#15803D] font-medium">
-                        {work.status}
-                      </span>
-                    </div>
-                    <h3 className="text-base font-bold text-slate-900">
-                      {title}
-                    </h3>
-                    <p className="text-sm text-slate-600 line-clamp-3">
-                      {desc}
-                    </p>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      {/* 6. LATEST UPDATES & ANNOUNCEMENTS PREVIEW */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#0B2545]">
-              {t.updates.heading}
-            </h2>
-            <p className="text-sm text-slate-600 mt-1">{t.updates.subheading}</p>
-          </div>
-          <Link
-            href="/updates"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#0B2545] hover:underline whitespace-nowrap shrink-0"
-          >
-            <span>All Announcements</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-
-        {announcements.length === 0 ? (
-          <div className="p-8 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-600">
-            {t.updates.empty}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {announcements.slice(0, 3).map((item) => {
-              const title = lang === 'kn' ? item.titleKn : item.titleEn;
-              const desc =
-                lang === 'kn' ? item.descriptionKn : item.descriptionEn;
-              return (
-                <article
-                  key={item.id}
-                  className="bg-white border border-slate-200 rounded-xl overflow-hidden flex flex-col"
-                >
-                  {item.photoUrl && (
-                    <img
-                      src={item.photoUrl}
-                      alt={title}
-                      referrerPolicy="no-referrer"
-                      className="w-full h-48 object-cover border-b border-slate-200"
-                    />
-                  )}
-                  <div className="p-5 space-y-2 flex-1">
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                      <span className="font-semibold text-[#D97706]">
-                        {ANNOUNCEMENT_TYPE_LABELS[item.type]?.[lang] ??
-                          item.type}
-                      </span>
-                      <span aria-hidden="true">·</span>
-                      <span className="inline-flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5" />
-                        {item.eventDate}
-                      </span>
-                    </div>
-                    <h3 className="text-base font-bold text-slate-900">
-                      {title}
-                    </h3>
-                    <p className="text-xs font-medium text-slate-500 flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5" />
-                      <span>{item.location}</span>
-                    </p>
-                    <p className="text-sm text-slate-600 leading-relaxed pt-1">
-                      {desc}
-                    </p>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
       </section>
 
       {/* 7. CONTACT & PUBLIC GRIEVANCE SNAPSHOT */}
