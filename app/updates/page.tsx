@@ -1,8 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Calendar, MapPin } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Calendar, MapPin, Maximize2 } from 'lucide-react';
 import { useLanguage } from '../../src/components/LanguageProvider.tsx';
+import {
+  ImageLightbox,
+  type LightboxImageItem,
+} from '../../src/components/ImageLightbox.tsx';
 import type { AnnouncementData } from '../../src/components/HomePortalView.tsx';
 import { ANNOUNCEMENT_TYPES } from '../../src/lib/constants.ts';
 import { ANNOUNCEMENT_TYPE_LABELS } from '../../src/lib/i18n.ts';
@@ -12,6 +16,7 @@ export default function UpdatesPage() {
   const [items, setItems] = useState<AnnouncementData[]>([]);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState('ALL');
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   useEffect(() => {
     fetch('/api/portal', { cache: 'no-store' })
@@ -26,6 +31,24 @@ export default function UpdatesPage() {
 
   const filtered =
     typeFilter === 'ALL' ? items : items.filter((i) => i.type === typeFilter);
+
+  const lightboxEntries = useMemo(() => {
+    const entries: { itemId: number; item: LightboxImageItem }[] = [];
+    for (const ann of filtered) {
+      if (!ann.photoUrl) continue;
+      const title = lang === 'kn' ? ann.titleKn : ann.titleEn;
+      const typeLabel = ANNOUNCEMENT_TYPE_LABELS[ann.type]?.[lang] ?? ann.type;
+      entries.push({
+        itemId: ann.id,
+        item: {
+          src: ann.photoUrl,
+          title,
+          subtitle: `${typeLabel} · ${ann.eventDate} · ${ann.location}`,
+        },
+      });
+    }
+    return entries;
+  }, [filtered, lang]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 space-y-8">
@@ -88,18 +111,34 @@ export default function UpdatesPage() {
             const title = lang === 'kn' ? item.titleKn : item.titleEn;
             const desc =
               lang === 'kn' ? item.descriptionKn : item.descriptionEn;
+            const entryIdx = lightboxEntries.findIndex(
+              (entry) => entry.itemId === item.id
+            );
             return (
               <article
                 key={item.id}
                 className="bg-white border border-slate-200 rounded-xl overflow-hidden flex flex-col"
               >
                 {item.photoUrl && (
-                  <img
-                    src={item.photoUrl}
-                    alt={title}
-                    referrerPolicy="no-referrer"
-                    className="w-full h-52 object-cover border-b border-slate-200"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (entryIdx >= 0) setLightboxIndex(entryIdx);
+                    }}
+                    aria-label={`View ${title} in full screen`}
+                    className="relative w-full h-52 overflow-hidden border-b border-slate-200 bg-slate-100 block group cursor-pointer text-left"
+                  >
+                    <img
+                      src={item.photoUrl}
+                      alt={title}
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                    />
+                    <span className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold bg-black/70 group-hover:bg-black/90 text-white rounded-md border border-white/20 transition-colors">
+                      <Maximize2 className="w-3.5 h-3.5" />
+                      <span>Full Screen</span>
+                    </span>
+                  </button>
                 )}
                 <div className="p-6 space-y-2.5 flex-1">
                   <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
@@ -126,6 +165,13 @@ export default function UpdatesPage() {
           })}
         </div>
       )}
+
+      <ImageLightbox
+        open={lightboxIndex !== null}
+        initialIndex={lightboxIndex ?? 0}
+        onClose={() => setLightboxIndex(null)}
+        items={lightboxEntries.map((e) => e.item)}
+      />
     </div>
   );
 }

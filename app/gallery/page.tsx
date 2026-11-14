@@ -1,8 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useLanguage } from '../../src/components/LanguageProvider.tsx';
 import { BeforeAfterViewer } from '../../src/components/BeforeAfterViewer.tsx';
+import {
+  ImageLightbox,
+  type LightboxImageItem,
+} from '../../src/components/ImageLightbox.tsx';
 import type { DevelopmentWorkData } from '../../src/components/HomePortalView.tsx';
 import { DEVELOPMENT_CATEGORIES, WARD_65_AREAS } from '../../src/lib/constants.ts';
 import { DEV_CATEGORY_LABELS } from '../../src/lib/i18n.ts';
@@ -13,6 +17,7 @@ export default function GalleryPage() {
   const [loading, setLoading] = useState(true);
   const [areaFilter, setAreaFilter] = useState('ALL');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   useEffect(() => {
     fetch('/api/portal', { cache: 'no-store' })
@@ -30,6 +35,27 @@ export default function GalleryPage() {
     const matchCat = categoryFilter === 'ALL' || w.category === categoryFilter;
     return matchArea && matchCat;
   });
+
+  const lightboxEntries = useMemo(() => {
+    const entries: { workId: number; item: LightboxImageItem }[] = [];
+    for (const work of filtered) {
+      const primarySrc = work.afterPhotoUrl || work.beforePhotoUrl;
+      if (!primarySrc) continue;
+      const title = lang === 'kn' ? work.titleKn : work.titleEn;
+      const catLabel = DEV_CATEGORY_LABELS[work.category]?.[lang] ?? work.category;
+      entries.push({
+        workId: work.id,
+        item: {
+          src: primarySrc,
+          title,
+          subtitle: `${work.area} · ${catLabel} · ${work.status}`,
+          beforeSrc: work.beforePhotoUrl,
+          afterSrc: work.afterPhotoUrl,
+        },
+      });
+    }
+    return entries;
+  }, [filtered, lang]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 space-y-8">
@@ -133,6 +159,9 @@ export default function GalleryPage() {
             const title = lang === 'kn' ? work.titleKn : work.titleEn;
             const desc =
               lang === 'kn' ? work.descriptionKn : work.descriptionEn;
+            const entryIdx = lightboxEntries.findIndex(
+              (entry) => entry.workId === work.id
+            );
             return (
               <article
                 key={work.id}
@@ -142,6 +171,9 @@ export default function GalleryPage() {
                   title={title}
                   beforePhotoUrl={work.beforePhotoUrl}
                   afterPhotoUrl={work.afterPhotoUrl}
+                  onOpenFullScreen={
+                    entryIdx >= 0 ? () => setLightboxIndex(entryIdx) : undefined
+                  }
                 />
                 <div className="space-y-1.5 pt-1">
                   <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
@@ -173,6 +205,13 @@ export default function GalleryPage() {
           })}
         </div>
       )}
+
+      <ImageLightbox
+        open={lightboxIndex !== null}
+        initialIndex={lightboxIndex ?? 0}
+        onClose={() => setLightboxIndex(null)}
+        items={lightboxEntries.map((e) => e.item)}
+      />
     </div>
   );
 }

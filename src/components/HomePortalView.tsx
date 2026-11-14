@@ -13,6 +13,7 @@ import {
   FileText,
   Mail,
   MapPin,
+  Maximize2,
   MessageCircle,
   Phone,
   Search,
@@ -20,6 +21,10 @@ import {
 } from 'lucide-react';
 import { useLanguage } from './LanguageProvider.tsx';
 import { BeforeAfterViewer } from './BeforeAfterViewer.tsx';
+import {
+  ImageLightbox,
+  type LightboxImageItem,
+} from './ImageLightbox.tsx';
 import { ANNOUNCEMENT_TYPE_LABELS, DEV_CATEGORY_LABELS } from '../lib/i18n.ts';
 import {
   DEFAULT_HERO_SLIDES,
@@ -176,18 +181,72 @@ export function HomePortalView({
 
   const [slideIndex, setSlideIndex] = useState(0);
   const [isSlidePaused, setIsSlidePaused] = useState(false);
+  const [lightboxState, setLightboxState] = useState<{
+    items: LightboxImageItem[];
+    index: number;
+  } | null>(null);
   const totalSlides = heroSlides.length;
 
   useEffect(() => {
-    if (totalSlides <= 1 || isSlidePaused) return;
+    if (totalSlides <= 1 || isSlidePaused || lightboxState) return;
     const timer = window.setInterval(() => {
       setSlideIndex((prev) => (prev + 1) % totalSlides);
     }, 4000);
     return () => window.clearInterval(timer);
-  }, [totalSlides, isSlidePaused]);
+  }, [totalSlides, isSlidePaused, lightboxState]);
 
   const activeSlide =
     heroSlides[slideIndex % Math.max(1, totalSlides)] ?? heroSlides[0];
+
+  const heroLightboxItems = useMemo<LightboxImageItem[]>(
+    () =>
+      heroSlides.map((slide) => ({
+        src: slide.src,
+        title: lang === 'kn' ? slide.titleKn : slide.titleEn,
+        subtitle: t.brandShort,
+      })),
+    [heroSlides, lang, t.brandShort]
+  );
+
+  const announcementPreviewLightbox = useMemo(() => {
+    const entries: { id: number; item: LightboxImageItem }[] = [];
+    for (const item of announcements.slice(0, 3)) {
+      if (!item.photoUrl) continue;
+      const title = lang === 'kn' ? item.titleKn : item.titleEn;
+      const typeLabel =
+        ANNOUNCEMENT_TYPE_LABELS[item.type]?.[lang] ?? item.type;
+      entries.push({
+        id: item.id,
+        item: {
+          src: item.photoUrl,
+          title,
+          subtitle: `${typeLabel} · ${item.eventDate} · ${item.location}`,
+        },
+      });
+    }
+    return entries;
+  }, [announcements, lang]);
+
+  const galleryPreviewLightbox = useMemo(() => {
+    const entries: { id: number; item: LightboxImageItem }[] = [];
+    for (const work of developmentWorks.slice(0, 3)) {
+      const primarySrc = work.afterPhotoUrl || work.beforePhotoUrl;
+      if (!primarySrc) continue;
+      const title = lang === 'kn' ? work.titleKn : work.titleEn;
+      const catLabel = DEV_CATEGORY_LABELS[work.category]?.[lang] ?? work.category;
+      entries.push({
+        id: work.id,
+        item: {
+          src: primarySrc,
+          title,
+          subtitle: `${work.area} · ${catLabel} · ${work.status}`,
+          beforeSrc: work.beforePhotoUrl,
+          afterSrc: work.afterPhotoUrl,
+        },
+      });
+    }
+    return entries;
+  }, [developmentWorks, lang]);
 
   const statItems = [
     {
@@ -300,7 +359,13 @@ export function HomePortalView({
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-                    className="absolute inset-0"
+                    onClick={() =>
+                      setLightboxState({
+                        items: heroLightboxItems,
+                        index: slideIndex % Math.max(1, totalSlides),
+                      })
+                    }
+                    className="absolute inset-0 cursor-pointer"
                   >
                     <img
                       src={activeSlide.src}
@@ -312,6 +377,21 @@ export function HomePortalView({
                     />
                   </motion.div>
                 </AnimatePresence>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setLightboxState({
+                      items: heroLightboxItems,
+                      index: slideIndex % Math.max(1, totalSlides),
+                    })
+                  }
+                  aria-label="View slideshow image in full screen"
+                  className="absolute top-2.5 right-2.5 z-10 inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold bg-black/65 hover:bg-black/85 text-white rounded-md border border-white/20 transition-colors cursor-pointer"
+                >
+                  <Maximize2 className="w-3.5 h-3.5" />
+                  <span>Full Screen</span>
+                </button>
 
                 {/* Bottom contrast scrim & caption */}
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent pt-10 pb-3 px-3.5 flex flex-col gap-2">
@@ -555,18 +635,41 @@ export function HomePortalView({
               const title = lang === 'kn' ? item.titleKn : item.titleEn;
               const desc =
                 lang === 'kn' ? item.descriptionKn : item.descriptionEn;
+              const lbIndex = announcementPreviewLightbox.findIndex(
+                (entry) => entry.id === item.id
+              );
               return (
                 <article
                   key={item.id}
                   className="bg-white border border-slate-200 rounded-xl overflow-hidden flex flex-col"
                 >
                   {item.photoUrl && (
-                    <img
-                      src={item.photoUrl}
-                      alt={title}
-                      referrerPolicy="no-referrer"
-                      className="w-full h-48 object-cover border-b border-slate-200"
-                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (lbIndex >= 0) {
+                          setLightboxState({
+                            items: announcementPreviewLightbox.map(
+                              (e) => e.item
+                            ),
+                            index: lbIndex,
+                          });
+                        }
+                      }}
+                      aria-label={`View ${title} in full screen`}
+                      className="relative w-full h-48 overflow-hidden border-b border-slate-200 bg-slate-100 block group cursor-pointer text-left"
+                    >
+                      <img
+                        src={item.photoUrl}
+                        alt={title}
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                      />
+                      <span className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-semibold bg-black/70 group-hover:bg-black/90 text-white rounded-md border border-white/20 transition-colors">
+                        <Maximize2 className="w-3.5 h-3.5" />
+                        <span>Full Screen</span>
+                      </span>
+                    </button>
                   )}
                   <div className="p-5 space-y-2 flex-1">
                     <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
@@ -626,6 +729,9 @@ export function HomePortalView({
               const title = lang === 'kn' ? work.titleKn : work.titleEn;
               const desc =
                 lang === 'kn' ? work.descriptionKn : work.descriptionEn;
+              const lbIndex = galleryPreviewLightbox.findIndex(
+                (entry) => entry.id === work.id
+              );
               return (
                 <article
                   key={work.id}
@@ -635,6 +741,15 @@ export function HomePortalView({
                     title={title}
                     beforePhotoUrl={work.beforePhotoUrl}
                     afterPhotoUrl={work.afterPhotoUrl}
+                    onOpenFullScreen={
+                      lbIndex >= 0
+                        ? () =>
+                            setLightboxState({
+                              items: galleryPreviewLightbox.map((e) => e.item),
+                              index: lbIndex,
+                            })
+                        : undefined
+                    }
                   />
                   <div className="space-y-1.5 pt-1">
                     <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
@@ -853,6 +968,13 @@ export function HomePortalView({
           </div>
         </div>
       </section>
+
+      <ImageLightbox
+        open={lightboxState !== null}
+        initialIndex={lightboxState?.index ?? 0}
+        items={lightboxState?.items ?? []}
+        onClose={() => setLightboxState(null)}
+      />
     </div>
   );
 }
