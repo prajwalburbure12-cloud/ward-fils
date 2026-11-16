@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 import { useLanguage } from './LanguageProvider.tsx';
@@ -27,12 +28,21 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       {/* Top Navigation Bar — Strict 3-Zone Contract */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-8">
-          {/* Zone 1: Single-line Brand Title */}
+          {/* Zone 1: Single-line Brand Logo & Title */}
           <Link
             href="/"
-            className="text-lg font-bold tracking-tight text-[#0B2545] whitespace-nowrap shrink-0"
+            className="inline-flex items-center gap-2.5 text-lg font-bold tracking-tight text-[#0B2545] whitespace-nowrap shrink-0"
           >
-            {t.brandShort}
+            <Image
+              src="/icon-192.png"
+              alt="Namma Ward 65 Hubli Logo"
+              width={36}
+              height={36}
+              priority
+              referrerPolicy="no-referrer"
+              className="w-8 h-8 sm:w-9 sm:h-9 object-contain shrink-0"
+            />
+            <span>{t.brandShort}</span>
           </Link>
 
           {/* Zone 2: 5 concise single-line text navigation links */}
