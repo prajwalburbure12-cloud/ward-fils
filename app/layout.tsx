@@ -70,6 +70,18 @@ export const metadata: Metadata = {
     title: SEO_TITLE,
     description: SEO_DESCRIPTION,
   },
+  icons: {
+    icon: [
+      { url: '/favicon.png', type: 'image/png', sizes: '192x192' },
+      { url: '/icon-48.png', type: 'image/png', sizes: '48x48' },
+      { url: '/icon-512.png', type: 'image/png', sizes: '512x512' },
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    shortcut: ['/favicon.png'],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
 };
 
 const structuredData = {
@@ -96,6 +108,7 @@ const structuredData = {
         'Hubli Ward 65',
       ],
       url: CANONICAL_SITE_URL,
+      logo: `${CANONICAL_SITE_URL}favicon.png`,
       areaServed: {
         '@type': 'Place',
         name: 'Dajiban Peth Hubli, Ward No. 65, Hubballi',
