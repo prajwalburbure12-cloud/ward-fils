@@ -1,8 +1,16 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { AnimatePresence, motion } from 'motion/react';
+import {
+  AnimatePresence,
+  animate,
+  motion,
+  useInView,
+  useMotionValue,
+  useReducedMotion,
+  useTransform,
+} from 'motion/react';
 import {
   ArrowRight,
   Building2,
@@ -108,12 +116,51 @@ export interface PublicPortalPayload {
   stats: PortalStatsData;
 }
 
+const EASE_OUT = [0.16, 1, 0.3, 1] as const;
+
+function AnimatedStatNumber({
+  value,
+  reduceMotion,
+}: {
+  value: number;
+  reduceMotion: boolean | null;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, amount: 0.4 });
+  const count = useMotionValue(0);
+  const rounded = useTransform(count, (latest) => Math.round(latest));
+
+  useEffect(() => {
+    if (reduceMotion) {
+      count.set(value);
+      return;
+    }
+    if (!inView) return;
+    const controls = animate(count, value, {
+      duration: 0.85,
+      ease: EASE_OUT,
+    });
+    return () => controls.stop();
+  }, [inView, value, reduceMotion, count]);
+
+  if (reduceMotion) {
+    return <span>{value}</span>;
+  }
+
+  return (
+    <span ref={ref}>
+      <motion.span>{rounded}</motion.span>
+    </span>
+  );
+}
+
 export function HomePortalView({
   initialData,
 }: {
   initialData: PublicPortalPayload;
 }) {
   const { lang, t } = useLanguage();
+  const reduceMotion = useReducedMotion();
   const [data, setData] = useState<PublicPortalPayload>(initialData);
 
   useEffect(() => {
@@ -306,37 +353,67 @@ export function HomePortalView({
         ) : null}
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
-          <div className="bg-[#0B2545] text-white rounded-2xl p-8 sm:p-10 lg:p-12 border border-[#163864] shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 lg:gap-10">
+          <motion.div
+            initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: EASE_OUT }}
+            className="bg-[#0B2545] text-white rounded-2xl p-8 sm:p-10 lg:p-12 border border-[#163864] shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 lg:gap-10"
+          >
             <div className="flex-1 min-w-0 max-w-xl space-y-4">
-              <p className="text-xs sm:text-sm font-medium tracking-wide text-amber-300">
+              <motion.p
+                initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, delay: 0.05, ease: EASE_OUT }}
+                className="text-xs sm:text-sm font-medium tracking-wide text-amber-300"
+              >
                 {t.hero.eyebrow}
-              </p>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white [text-wrap:balance]">
+              </motion.p>
+              <motion.h1
+                initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1, ease: EASE_OUT }}
+                className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white [text-wrap:balance]"
+              >
                 {t.hero.title}
-              </h1>
-              <p className="text-lg sm:text-xl font-semibold text-slate-200">
+              </motion.h1>
+              <motion.p
+                initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, delay: 0.16, ease: EASE_OUT }}
+                className="text-lg sm:text-xl font-semibold text-slate-200"
+              >
                 {t.hero.subtitle}
-              </p>
-              <p className="text-base sm:text-lg text-emerald-300 font-medium">
+              </motion.p>
+              <motion.p
+                initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, delay: 0.22, ease: EASE_OUT }}
+                className="text-base sm:text-lg text-emerald-300 font-medium"
+              >
                 {t.hero.motto}
-              </p>
+              </motion.p>
 
-              <div className="pt-4 flex flex-wrap items-center gap-4">
+              <motion.div
+                initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, delay: 0.28, ease: EASE_OUT }}
+                className="pt-4 flex flex-wrap items-center gap-4"
+              >
                 <Link
                   href="/register"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-base font-bold text-white bg-[#15803D] hover:bg-[#166534] rounded-lg transition-colors whitespace-nowrap shrink-0"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-base font-bold text-white bg-[#15803D] hover:bg-[#166534] hover:-translate-y-0.5 active:translate-y-0 rounded-lg transition-all duration-200 whitespace-nowrap shrink-0 shadow-xs"
                 >
                   <FileText className="w-5 h-5" />
                   <span>{t.hero.ctaRegister}</span>
                 </Link>
                 <Link
                   href="/track"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-base font-semibold text-[#0B2545] bg-white hover:bg-slate-100 rounded-lg transition-colors whitespace-nowrap shrink-0"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 text-base font-semibold text-[#0B2545] bg-white hover:bg-slate-100 hover:-translate-y-0.5 active:translate-y-0 rounded-lg transition-all duration-200 whitespace-nowrap shrink-0 shadow-xs"
                 >
                   <Search className="w-5 h-5" />
                   <span>{t.hero.ctaTrack}</span>
                 </Link>
-              </div>
+              </motion.div>
 
               {!settings?.bannerImageUrl && (
                 <p className="pt-2 text-xs text-slate-300/80">
@@ -347,7 +424,10 @@ export function HomePortalView({
 
             {/* Right-side Responsive Slideshow: Square on vertical mobile, Big Landscape Rectangle on horizontal / laptop */}
             {activeSlide && (
-              <div
+              <motion.div
+                initial={reduceMotion ? false : { opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.55, delay: 0.15, ease: EASE_OUT }}
                 onMouseEnter={() => setIsSlidePaused(true)}
                 onMouseLeave={() => setIsSlidePaused(false)}
                 className="w-full max-w-[260px] aspect-square sm:max-w-none sm:w-[270px] sm:aspect-[16/10] md:w-[340px] lg:w-[460px] xl:w-[520px] shrink-0 mx-auto sm:mx-0 rounded-xl overflow-hidden border border-white/15 bg-[#081b34] relative shadow-md group"
@@ -355,10 +435,10 @@ export function HomePortalView({
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={`${slideIndex % totalSlides}-${activeSlide.src}`}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                    initial={reduceMotion ? false : { opacity: 0, scale: 1.03 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={reduceMotion ? undefined : { opacity: 0 }}
+                    transition={{ duration: 0.5, ease: EASE_OUT }}
                     onClick={() =>
                       setLightboxState({
                         items: heroLightboxItems,
@@ -447,15 +527,19 @@ export function HomePortalView({
                     </div>
                   )}
                 </div>
-              </div>
+              </motion.div>
             )}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* 2. LIVE DATABASE STATISTICS */}
-      <section
+      <motion.section
         aria-label="Live Civic Statistics"
+        initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.15 }}
+        transition={{ duration: 0.5, ease: EASE_OUT }}
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
       >
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 mb-6">
@@ -468,24 +552,42 @@ export function HomePortalView({
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 border border-slate-200 rounded-xl bg-white overflow-hidden divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
-          {statItems.map((item) => (
-            <div key={item.label} className="p-5 flex flex-col justify-between">
+          {statItems.map((item, idx) => (
+            <motion.div
+              key={item.label}
+              initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{
+                duration: 0.4,
+                delay: reduceMotion ? 0 : idx * 0.05,
+                ease: EASE_OUT,
+              }}
+              className="p-5 flex flex-col justify-between hover:bg-slate-50/70 transition-colors"
+            >
               <div className="text-xs font-medium text-slate-600 leading-snug">
                 {item.label}
               </div>
               <div
                 className={`mt-3 text-3xl font-mono font-bold tabular-nums ${item.accent}`}
               >
-                {item.value}
+                <AnimatedStatNumber
+                  value={item.value}
+                  reduceMotion={reduceMotion}
+                />
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
-      </section>
+      </motion.section>
 
       {/* 3. OUR PUBLIC REPRESENTATIVES */}
-      <section
+      <motion.section
         id="representatives"
+        initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.1 }}
+        transition={{ duration: 0.5, ease: EASE_OUT }}
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
       >
         <div className="mb-8">
@@ -498,7 +600,7 @@ export function HomePortalView({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {representatives.map((rep) => {
+          {representatives.map((rep, idx) => {
             const name = lang === 'kn' ? rep.nameKn : rep.nameEn;
             const designation =
               lang === 'kn' ? rep.designationKn : rep.designationEn;
@@ -506,9 +608,17 @@ export function HomePortalView({
             const work = lang === 'kn' ? rep.workKn : rep.workEn;
 
             return (
-              <article
+              <motion.article
                 key={rep.id}
-                className="bg-white border border-slate-200 rounded-xl overflow-hidden flex flex-col"
+                initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.15 }}
+                transition={{
+                  duration: 0.45,
+                  delay: reduceMotion ? 0 : idx * 0.08,
+                  ease: EASE_OUT,
+                }}
+                className="bg-white border border-slate-200 rounded-xl overflow-hidden flex flex-col hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
               >
                 {/* Exact Supplied Photograph Frame (No alteration or replacement faces) */}
                 <div className="w-full aspect-[4/3] bg-slate-100 border-b border-slate-200 flex items-center justify-center overflow-hidden">
@@ -601,14 +711,20 @@ export function HomePortalView({
                     )}
                   </div>
                 </div>
-              </article>
+              </motion.article>
             );
           })}
         </div>
-      </section>
+      </motion.section>
 
       {/* 4. LATEST UPDATES & ANNOUNCEMENTS PREVIEW */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <motion.section
+        initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.12 }}
+        transition={{ duration: 0.5, ease: EASE_OUT }}
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+      >
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#0B2545]">
@@ -631,7 +747,7 @@ export function HomePortalView({
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {announcements.slice(0, 3).map((item) => {
+            {announcements.slice(0, 3).map((item, idx) => {
               const title = lang === 'kn' ? item.titleKn : item.titleEn;
               const desc =
                 lang === 'kn' ? item.descriptionKn : item.descriptionEn;
@@ -639,9 +755,17 @@ export function HomePortalView({
                 (entry) => entry.id === item.id
               );
               return (
-                <article
+                <motion.article
                   key={item.id}
-                  className="bg-white border border-slate-200 rounded-xl overflow-hidden flex flex-col"
+                  initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.15 }}
+                  transition={{
+                    duration: 0.45,
+                    delay: reduceMotion ? 0 : idx * 0.08,
+                    ease: EASE_OUT,
+                  }}
+                  className="bg-white border border-slate-200 rounded-xl overflow-hidden flex flex-col hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
                 >
                   {item.photoUrl && (
                     <button
@@ -694,15 +818,21 @@ export function HomePortalView({
                       {desc}
                     </p>
                   </div>
-                </article>
+                </motion.article>
               );
             })}
           </div>
         )}
-      </section>
+      </motion.section>
 
       {/* 5. WARD DEVELOPMENT GALLERY PREVIEW */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <motion.section
+        initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.12 }}
+        transition={{ duration: 0.5, ease: EASE_OUT }}
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+      >
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#0B2545]">
@@ -725,7 +855,7 @@ export function HomePortalView({
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {developmentWorks.slice(0, 3).map((work) => {
+            {developmentWorks.slice(0, 3).map((work, idx) => {
               const title = lang === 'kn' ? work.titleKn : work.titleEn;
               const desc =
                 lang === 'kn' ? work.descriptionKn : work.descriptionEn;
@@ -733,9 +863,17 @@ export function HomePortalView({
                 (entry) => entry.id === work.id
               );
               return (
-                <article
+                <motion.article
                   key={work.id}
-                  className="bg-white border border-slate-200 rounded-xl p-4 space-y-3"
+                  initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.15 }}
+                  transition={{
+                    duration: 0.45,
+                    delay: reduceMotion ? 0 : idx * 0.08,
+                    ease: EASE_OUT,
+                  }}
+                  className="bg-white border border-slate-200 rounded-xl p-4 space-y-3 hover:shadow-md transition-shadow duration-200"
                 >
                   <BeforeAfterViewer
                     title={title}
@@ -773,99 +911,98 @@ export function HomePortalView({
                       {desc}
                     </p>
                   </div>
-                </article>
+                </motion.article>
               );
             })}
           </div>
         )}
-      </section>
+      </motion.section>
 
       {/* 6. RESIDENT SERVICES DIRECTORY */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <motion.section
+        initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.12 }}
+        transition={{ duration: 0.5, ease: EASE_OUT }}
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+      >
         <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#0B2545] mb-6">
           {t.quickServices.heading}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          <Link
-            href="/register"
-            className="group p-6 rounded-xl border border-slate-200 bg-white hover:border-[#0B2545] transition-colors flex flex-col justify-between"
-          >
-            <div className="space-y-3">
-              <FileText className="w-6 h-6 text-[#15803D]" />
-              <h3 className="text-base font-bold text-slate-900">
-                {t.quickServices.registerTitle}
-              </h3>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                {t.quickServices.registerDesc}
-              </p>
-            </div>
-            <div className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-[#0B2545] group-hover:gap-2.5 transition-all">
-              <span>{t.nav.register}</span>
-              <ArrowRight className="w-4 h-4" />
-            </div>
-          </Link>
-
-          <Link
-            href="/track"
-            className="group p-6 rounded-xl border border-slate-200 bg-white hover:border-[#0B2545] transition-colors flex flex-col justify-between"
-          >
-            <div className="space-y-3">
-              <Search className="w-6 h-6 text-[#0B2545]" />
-              <h3 className="text-base font-bold text-slate-900">
-                {t.quickServices.trackTitle}
-              </h3>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                {t.quickServices.trackDesc}
-              </p>
-            </div>
-            <div className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-[#0B2545] group-hover:gap-2.5 transition-all">
-              <span>{t.nav.track}</span>
-              <ArrowRight className="w-4 h-4" />
-            </div>
-          </Link>
-
-          <Link
-            href="/gallery"
-            className="group p-6 rounded-xl border border-slate-200 bg-white hover:border-[#0B2545] transition-colors flex flex-col justify-between"
-          >
-            <div className="space-y-3">
-              <Camera className="w-6 h-6 text-[#D97706]" />
-              <h3 className="text-base font-bold text-slate-900">
-                {t.quickServices.galleryTitle}
-              </h3>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                {t.quickServices.galleryDesc}
-              </p>
-            </div>
-            <div className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-[#0B2545] group-hover:gap-2.5 transition-all">
-              <span>{t.nav.gallery}</span>
-              <ArrowRight className="w-4 h-4" />
-            </div>
-          </Link>
-
-          <Link
-            href="/updates"
-            className="group p-6 rounded-xl border border-slate-200 bg-white hover:border-[#0B2545] transition-colors flex flex-col justify-between"
-          >
-            <div className="space-y-3">
-              <Building2 className="w-6 h-6 text-[#0B2545]" />
-              <h3 className="text-base font-bold text-slate-900">
-                {t.quickServices.updatesTitle}
-              </h3>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                {t.quickServices.updatesDesc}
-              </p>
-            </div>
-            <div className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-[#0B2545] group-hover:gap-2.5 transition-all">
-              <span>{t.nav.updates}</span>
-              <ArrowRight className="w-4 h-4" />
-            </div>
-          </Link>
+          {[
+            {
+              href: '/register',
+              icon: <FileText className="w-6 h-6 text-[#15803D]" />,
+              title: t.quickServices.registerTitle,
+              desc: t.quickServices.registerDesc,
+              cta: t.nav.register,
+            },
+            {
+              href: '/track',
+              icon: <Search className="w-6 h-6 text-[#0B2545]" />,
+              title: t.quickServices.trackTitle,
+              desc: t.quickServices.trackDesc,
+              cta: t.nav.track,
+            },
+            {
+              href: '/gallery',
+              icon: <Camera className="w-6 h-6 text-[#D97706]" />,
+              title: t.quickServices.galleryTitle,
+              desc: t.quickServices.galleryDesc,
+              cta: t.nav.gallery,
+            },
+            {
+              href: '/updates',
+              icon: <Building2 className="w-6 h-6 text-[#0B2545]" />,
+              title: t.quickServices.updatesTitle,
+              desc: t.quickServices.updatesDesc,
+              cta: t.nav.updates,
+            },
+          ].map((service, idx) => (
+            <motion.div
+              key={service.href}
+              initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.15 }}
+              transition={{
+                duration: 0.4,
+                delay: reduceMotion ? 0 : idx * 0.06,
+                ease: EASE_OUT,
+              }}
+              className="flex"
+            >
+              <Link
+                href={service.href}
+                className="group w-full p-6 rounded-xl border border-slate-200 bg-white hover:border-[#0B2545] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between"
+              >
+                <div className="space-y-3">
+                  {service.icon}
+                  <h3 className="text-base font-bold text-slate-900">
+                    {service.title}
+                  </h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    {service.desc}
+                  </p>
+                </div>
+                <div className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-[#0B2545] group-hover:gap-2.5 transition-all">
+                  <span>{service.cta}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </div>
+              </Link>
+            </motion.div>
+          ))}
         </div>
-      </section>
+      </motion.section>
 
       {/* 7. CONTACT & PUBLIC GRIEVANCE SNAPSHOT */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <motion.section
+        initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.12 }}
+        transition={{ duration: 0.5, ease: EASE_OUT }}
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+      >
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 sm:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           <div className="lg:col-span-7 space-y-4">
             <h2 className="text-2xl font-bold tracking-tight text-[#0B2545]">
@@ -967,7 +1104,7 @@ export function HomePortalView({
             </dl>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       <ImageLightbox
         open={lightboxState !== null}
