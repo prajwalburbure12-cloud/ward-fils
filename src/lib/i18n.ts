@@ -109,9 +109,9 @@ export const COPY = {
       admin: 'Admin Portal',
     },
     hero: {
-      eyebrow: 'Official Civic Service Portal · Ward No. 65, Hubballi',
+      eyebrow: 'Namma Ward 65 Hubli · Ward 65 Public Portal · HDMC Ward 65',
       title: 'WELCOME TO WARD NO. 65',
-      subtitle: 'Hubballi-Dharwad Municipal Corporation',
+      subtitle: 'Hubli Dharwad Municipal Corporation · Ward No 65 Hubli',
       motto: '"Your Ward, Your Voice, Our Responsibility"',
       ctaRegister: 'Register a Complaint',
       ctaTrack: 'Track Your Complaint',
@@ -132,7 +132,7 @@ export const COPY = {
     reps: {
       heading: 'OUR PUBLIC REPRESENTATIVES',
       subheading:
-        'Dedicated elected leadership serving the residents of Ward No. 65, Hubballi.',
+        'Dedicated civic leadership serving Namma Ward 65 and Dajiban Peth Hubli, led by Sunita Burbure and Prakash Burbure.',
       publicWorkLabel: 'Public Service & Development Focus',
       contactLabel: 'Contact Details',
       photoPending: 'Official Photograph Pending Upload',
@@ -211,7 +211,7 @@ export const COPY = {
     gallery: {
       heading: 'Ward Development Gallery',
       subheading:
-        'Before-and-after documentation of civic infrastructure, roads, water supply, and sanitation improvements across Ward No. 65.',
+        'Before-and-after documentation of roads, water supply, and sanitation improvements across Hubli Ward 65 and Dajibanpeth Hubli.',
       allAreas: 'All Ward 65 Areas',
       allCategories: 'All Categories',
       beforeLabel: 'Before Work',
@@ -222,7 +222,7 @@ export const COPY = {
     updates: {
       heading: 'Latest Updates & Announcements',
       subheading:
-        'Official Ward 65 notices, new development projects, ongoing civic works, and community programmes.',
+        'Official Ward 65 Hubli notices, civic development projects, and community updates for Namma Ward 65.',
       allTypes: 'All Updates',
       empty:
         'No public notices or announcements have been published yet. Administrators can publish official updates from the Admin Portal.',
@@ -230,7 +230,7 @@ export const COPY = {
     contact: {
       heading: 'Contact & Public Grievance Cell',
       subheading:
-        'Reach the Ward No. 65 office, public representatives, or emergency HDMC helplines.',
+        'Reach the Ward No 65 Hubli office in Dajiban Peth Hubli, public representatives Sunita Burbure and Prakash Burbure in Hubli, or emergency HDMC helplines.',
       officeTitle: 'Ward No. 65 Municipal Office',
       whatsappBtn: 'Contact via WhatsApp',
       mapsBtn: 'Open Location in Google Maps',

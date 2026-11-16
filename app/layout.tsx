@@ -7,7 +7,6 @@ import {
 import './globals.css';
 import { LanguageProvider } from '../src/components/LanguageProvider.tsx';
 import { SiteShell } from '../src/components/SiteShell.tsx';
-import { getEnvSiteUrl } from '../src/lib/site-url.ts';
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -27,41 +26,49 @@ const jetbrainsMono = JetBrains_Mono({
   variable: '--font-jetbrains-mono',
 });
 
-const siteUrl = getEnvSiteUrl();
+const CANONICAL_SITE_URL = 'https://nammaward65hubli.in/';
+const SEO_TITLE = 'Namma Ward 65 Hubli | Public Portal';
+const SEO_DESCRIPTION =
+  'Namma Ward 65 Hubli – Public information, civic services and development updates for Ward No. 65, Hubli, led by Prakash Burbure and Sunita Burbure.';
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title: 'Ward No. 65 – Public Service & Development Portal',
-  description:
-    'Official public service, civic grievance redressal, and ward development portal for HDMC Ward No. 65, Hubballi, Karnataka.',
+  metadataBase: new URL(CANONICAL_SITE_URL),
+  title: SEO_TITLE,
+  description: SEO_DESCRIPTION,
   keywords: [
-    'Ward 65 Hubli',
-    'nammaward65hubli',
-    'prakashburbure',
-    'sunitaburbure',
     'Namma Ward 65 Hubli',
-    'Ward No. 65 Hubballi',
-    'Prakash Burbure',
-    'Sunita Prakash Burabure',
-    'Sunita Burbure',
+    'Ward 65 Hubli',
     'HDMC Ward 65',
-    'Hubballi-Dharwad Municipal Corporation',
+    'Ward No 65 Hubli',
+    'Hubli Ward 65',
+    'Ward 65 Public Portal',
+    'Namma Ward 65',
+    'Hubli Dharwad Municipal Corporation',
+    'Prakash Burbure',
+    'Sunita Burbure',
+    'Dajiban Peth Hubli',
+    'Dajibanpeth Hubli',
+    'Prakash Burbure Hubli',
+    'Sunita Burbure Hubli',
   ],
   alternates: {
-    canonical: '/',
+    canonical: CANONICAL_SITE_URL,
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
   openGraph: {
-    title: 'Ward No. 65 – Public Service & Development Portal',
-    description:
-      'Official public service, civic grievance redressal, and ward development portal for HDMC Ward No. 65, Hubballi, Karnataka.',
-    siteName: 'Ward 65 Hubli – nammaward65hubli',
+    title: SEO_TITLE,
+    description: SEO_DESCRIPTION,
+    url: CANONICAL_SITE_URL,
+    siteName: 'Namma Ward 65 Hubli',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Ward No. 65 – Public Service & Development Portal',
-    description:
-      'Official public service, civic grievance redressal, and ward development portal for HDMC Ward No. 65, Hubballi, Karnataka.',
+    title: SEO_TITLE,
+    description: SEO_DESCRIPTION,
   },
 };
 
@@ -70,22 +77,32 @@ const structuredData = {
   '@graph': [
     {
       '@type': 'WebSite',
-      name: 'Ward 65 Hubli',
+      name: 'Namma Ward 65 Hubli | Public Portal',
       alternateName: [
-        'nammaward65hubli',
         'Namma Ward 65 Hubli',
-        'Ward No. 65 – Public Service & Development Portal',
+        'Ward 65 Hubli',
+        'Ward 65 Public Portal',
+        'nammaward65hubli',
       ],
-      url: siteUrl,
+      url: CANONICAL_SITE_URL,
       inLanguage: ['en', 'kn'],
     },
     {
       '@type': 'GovernmentOrganization',
-      name: 'Ward 65 Hubli – Hubballi-Dharwad Municipal Corporation',
-      alternateName: ['nammaward65hubli', 'HDMC Ward No. 65'],
-      url: siteUrl,
+      name: 'HDMC Ward 65 – Hubli Dharwad Municipal Corporation',
+      alternateName: [
+        'Namma Ward 65 Hubli',
+        'Ward No 65 Hubli',
+        'Hubli Ward 65',
+      ],
+      url: CANONICAL_SITE_URL,
+      areaServed: {
+        '@type': 'Place',
+        name: 'Dajiban Peth Hubli, Ward No. 65, Hubballi',
+      },
       address: {
         '@type': 'PostalAddress',
+        streetAddress: 'Dajiban Peth, Ward No. 65',
         addressLocality: 'Hubballi',
         addressRegion: 'Karnataka',
         postalCode: '580020',
@@ -94,22 +111,26 @@ const structuredData = {
     },
     {
       '@type': 'Person',
-      name: 'Smt. Sunita Prakash Burabure',
-      alternateName: ['sunitaburbure', 'Sunita Burbure'],
+      name: 'Sunita Burbure',
+      alternateName: [
+        'Smt. Sunita Prakash Burabure',
+        'Sunita Burbure Hubli',
+        'sunitaburbure',
+      ],
       jobTitle: 'Corporator – Ward No. 65 (HDMC)',
       worksFor: {
         '@type': 'GovernmentOrganization',
-        name: 'Ward 65 Hubli',
+        name: 'Namma Ward 65 Hubli',
       },
     },
     {
       '@type': 'Person',
       name: 'Prakash Burbure',
-      alternateName: ['prakashburbure'],
+      alternateName: ['Prakash Burbure Hubli', 'prakashburbure'],
       jobTitle: 'Ward Operations Head',
       worksFor: {
         '@type': 'GovernmentOrganization',
-        name: 'Ward 65 Hubli',
+        name: 'Namma Ward 65 Hubli',
       },
     },
   ],
