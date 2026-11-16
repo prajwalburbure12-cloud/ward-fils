@@ -20,8 +20,12 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
     rules: [
       {
         userAgent: '*',
-        allow: '/',
+        allow: ['/', '/favicon.png', '/favicon.ico'],
         disallow: ['/admin', '/api/'],
+      },
+      {
+        userAgent: 'Googlebot-Image',
+        allow: ['/favicon.png', '/favicon.ico', '/'],
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,

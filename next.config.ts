@@ -20,6 +20,19 @@ const nextConfig: NextConfig = {
     ],
   },
   output: 'standalone',
+  async headers() {
+    return [
+      {
+        source: '/(favicon\\.png|favicon\\.ico|apple-touch-icon\\.png)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, stale-while-revalidate=604800',
+          },
+        ],
+      },
+    ];
+  },
   transpilePackages: ['motion'],
   webpack: (config, {dev}) => {
     // HMR is disabled in AI Studio via DISABLE_HMR env var.
