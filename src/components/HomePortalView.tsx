@@ -337,7 +337,12 @@ export function HomePortalView({
       {/* 1. HOMEPAGE BANNER SECTION */}
       <section aria-label="Ward 65 Official Banner" className="bg-slate-50 border-b border-slate-200">
         {settings?.bannerImageUrl ? (
-          <div className="w-full bg-white border-b border-slate-200">
+          <motion.div
+            initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: EASE_OUT }}
+            className="w-full bg-white border-b border-slate-200"
+          >
             <div className="max-w-7xl mx-auto">
               <img
                 src={settings.bannerImageUrl}
@@ -349,7 +354,7 @@ export function HomePortalView({
                 className="w-full h-auto block"
               />
             </div>
-          </div>
+          </motion.div>
         ) : null}
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
@@ -873,7 +878,7 @@ export function HomePortalView({
                     delay: reduceMotion ? 0 : idx * 0.08,
                     ease: EASE_OUT,
                   }}
-                  className="bg-white border border-slate-200 rounded-xl p-4 space-y-3 hover:shadow-md transition-shadow duration-200"
+                  className="bg-white border border-slate-200 rounded-xl p-4 space-y-3 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
                 >
                   <BeforeAfterViewer
                     title={title}
@@ -1004,7 +1009,13 @@ export function HomePortalView({
         className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
       >
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 sm:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          <div className="lg:col-span-7 space-y-4">
+          <motion.div
+            initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.15 }}
+            transition={{ duration: 0.45, ease: EASE_OUT }}
+            className="lg:col-span-7 space-y-4"
+          >
             <h2 className="text-2xl font-bold tracking-tight text-[#0B2545]">
               {t.contact.heading}
             </h2>
@@ -1074,9 +1085,19 @@ export function HomePortalView({
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="lg:col-span-5 bg-white border border-slate-200 rounded-xl p-6 space-y-4">
+          <motion.div
+            initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.15 }}
+            transition={{
+              duration: 0.45,
+              delay: reduceMotion ? 0 : 0.1,
+              ease: EASE_OUT,
+            }}
+            className="lg:col-span-5 bg-white border border-slate-200 rounded-xl p-6 space-y-4 shadow-2xs"
+          >
             <h3 className="text-base font-bold text-slate-900">
               {t.contact.emergencyTitle}
             </h3>
@@ -1102,7 +1123,7 @@ export function HomePortalView({
                 </dd>
               </div>
             </dl>
-          </div>
+          </motion.div>
         </div>
       </motion.section>
 

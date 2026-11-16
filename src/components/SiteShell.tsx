@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { MotionConfig, motion } from 'motion/react';
 import { Menu, X } from 'lucide-react';
 import { useLanguage } from './LanguageProvider.tsx';
 
@@ -21,9 +22,10 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-white text-slate-900">
-      {/* Subtle Tricolor Civic Accent Hairline */}
-      <div className="h-1 w-full bg-gradient-to-r from-[#EA580C] via-[#0B2545] to-[#15803D]" />
+    <MotionConfig reducedMotion="user">
+      <div className="min-h-screen flex flex-col bg-white text-slate-900">
+        {/* Subtle Tricolor Civic Accent Hairline */}
+        <div className="h-1 w-full bg-gradient-to-r from-[#EA580C] via-[#0B2545] to-[#15803D]" />
 
       {/* Top Navigation Bar — Strict 3-Zone Contract */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200">
@@ -196,10 +198,25 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1">{children}</main>
+      <main className="flex-1">
+        <motion.div
+          key={pathname}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {children}
+        </motion.div>
+      </main>
 
       {/* Official Ward 65 Footer */}
-      <footer className="bg-[#0B2545] text-slate-200 mt-16 border-t border-[#163864]">
+      <motion.footer
+        initial={{ opacity: 0, y: 12 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.08 }}
+        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+        className="bg-[#0B2545] text-slate-200 mt-16 border-t border-[#163864]"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
             <div className="md:col-span-6 space-y-2">
@@ -299,7 +316,8 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </div>
-      </footer>
+      </motion.footer>
     </div>
+    </MotionConfig>
   );
 }
