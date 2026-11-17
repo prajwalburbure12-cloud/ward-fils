@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   CheckCircle2,
   Clock,
@@ -8,6 +8,7 @@ import {
   Building2,
   MapPin,
   Calendar,
+  History,
 } from 'lucide-react';
 import { useLanguage } from './LanguageProvider.tsx';
 import { COMPLAINT_STATUSES } from '../lib/constants.ts';
@@ -47,17 +48,17 @@ export function ComplaintTracker({ initialCode = '' }: { initialCode?: string })
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<TrackedComplaint | null>(null);
+  const [history, setHistory] = useState<TrackedComplaint[]>([]);
 
   const handleTrack = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setResult(null);
+    setHistory([]);
 
     const cleanedMobile = mobileNumber.replace(/\D/g, '');
-    if (!complaintCode.trim() || !/^[6-9]\d{9}$/.test(cleanedMobile)) {
-      setError(
-        'Please enter both your Complaint ID and 10-digit registered mobile number.'
-      );
+    if (!/^[6-9]\d{9}$/.test(cleanedMobile)) {
+      setError('Please enter your 10-digit registered mobile number.');
       return;
     }
 
@@ -76,6 +77,13 @@ export function ComplaintTracker({ initialCode = '' }: { initialCode?: string })
         throw new Error(data.error || 'Unable to locate complaint.');
       }
       setResult(data.complaint);
+      setHistory(
+        Array.isArray(data.history)
+          ? data.history
+          : data.complaint
+            ? [data.complaint]
+            : []
+      );
     } catch (err) {
       setError(
         err instanceof Error ? err.message : 'Unable to fetch complaint status.'
@@ -103,12 +111,11 @@ export function ComplaintTracker({ initialCode = '' }: { initialCode?: string })
               htmlFor="trackCode"
               className="block text-sm font-semibold text-slate-800 mb-1.5"
             >
-              {t.track.codeLabel} *
+              {t.track.codeLabel} ({lang === 'kn' ? 'ಐಚ್ಛಿಕ' : 'Optional'})
             </label>
             <input
               id="trackCode"
               type="text"
-              required
               value={complaintCode}
               onChange={(e) => setComplaintCode(e.target.value.toUpperCase())}
               placeholder={t.track.codePlaceholder}
@@ -161,6 +168,72 @@ export function ComplaintTracker({ initialCode = '' }: { initialCode?: string })
           </div>
         )}
       </form>
+
+      {history.length > 0 && (
+        <div className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 shadow-xs space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-base sm:text-lg font-bold text-[#0B2545] flex items-center gap-2">
+              <History className="w-4 h-4 shrink-0" />
+              <span>
+                {lang === 'kn'
+                  ? `ಈ ಮೊಬೈಲ್ ಸಂಖ್ಯೆಯಲ್ಲಿ ದಾಖಲಾದ ದೂರುಗಳು (${history.length})`
+                  : `Registered Complaints History (${history.length})`}
+              </span>
+            </h2>
+            <span className="text-xs text-slate-500">
+              {lang === 'kn'
+                ? 'ವಿವರಗಳನ್ನು ನೋಡಲು ದೂರಿನ ಮೇಲೆ ಕ್ಲಿಕ್ ಮಾಡಿ'
+                : 'Select any complaint to view full timeline & details'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {history.map((item) => {
+              const isSelected = result?.id === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setResult(item)}
+                  className={`text-left p-4 rounded-lg border transition-all cursor-pointer ${
+                    isSelected
+                      ? 'border-[#0B2545] bg-[#0B2545]/5 ring-1 ring-[#0B2545]/20'
+                      : 'border-slate-200 bg-slate-50/60 hover:bg-white hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-mono font-bold text-[#0B2545] tabular-nums">
+                      {item.complaintCode}
+                    </span>
+                    <span
+                      className={`text-[11px] font-semibold px-2 py-0.5 rounded border ${
+                        item.status === 'Resolved' || item.status === 'Closed'
+                          ? 'bg-emerald-50 text-[#15803D] border-emerald-200'
+                          : 'bg-amber-50 text-amber-800 border-amber-200'
+                      }`}
+                    >
+                      {STATUS_LABELS[item.status]?.[lang] ?? item.status}
+                    </span>
+                  </div>
+                  <div className="mt-2 text-xs font-medium text-slate-800 truncate">
+                    {CATEGORY_LABELS[item.category]?.[lang] ?? item.category}
+                  </div>
+                  <div className="mt-0.5 text-xs text-slate-500 truncate">
+                    {item.areaStreet}
+                  </div>
+                  <div className="mt-2 text-[11px] text-slate-500 font-mono tabular-nums">
+                    {new Date(item.createdAt).toLocaleDateString('en-IN', {
+                      day: '2-digit',
+                      month: 'short',
+                      year: 'numeric',
+                    })}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {result && (
         <div className="bg-white border border-slate-200 rounded-xl p-6 sm:p-8 shadow-xs space-y-8">
@@ -283,14 +356,16 @@ export function ComplaintTracker({ initialCode = '' }: { initialCode?: string })
             </div>
 
             <div className="space-y-4">
-              <div>
-                <div className="text-xs text-slate-500 mb-1">
-                  Complaint Description
+              {result.description && (
+                <div>
+                  <div className="text-xs text-slate-500 mb-1">
+                    Complaint Description
+                  </div>
+                  <p className="text-sm text-slate-800 leading-relaxed bg-slate-50 p-3.5 rounded-lg border border-slate-200">
+                    {result.description}
+                  </p>
                 </div>
-                <p className="text-sm text-slate-800 leading-relaxed bg-slate-50 p-3.5 rounded-lg border border-slate-200">
-                  {result.description}
-                </p>
-              </div>
+              )}
 
               {result.latestUpdate && (
                 <div>

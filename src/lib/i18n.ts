@@ -190,7 +190,7 @@ export const COPY = {
     track: {
       heading: 'Track Your Complaint',
       subheading:
-        'Enter your unique Complaint ID and registered 10-digit mobile number to view live status and resolution progress.',
+        'Enter your registered 10-digit mobile number (Complaint ID optional) to view all your registered complaints and resolution progress.',
       codeLabel: 'Complaint ID',
       codePlaceholder: 'e.g. HDMC-W65-2026-0001',
       mobileLabel: 'Registered Mobile Number',
@@ -343,7 +343,7 @@ export const COPY = {
     track: {
       heading: 'ನಿಮ್ಮ ದೂರನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಿ',
       subheading:
-        'ನೇರ ಸ್ಥಿತಿ ಮತ್ತು ಪರಿಹಾರದ ಪ್ರಗತಿಯನ್ನು ನೋಡಲು ನಿಮ್ಮ ದೂರು ಸಂಖ್ಯೆ ಮತ್ತು ನೋಂದಾಯಿತ ಮೊಬೈಲ್ ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ.',
+        'ನಿಮ್ಮ ನೋಂದಾಯಿತ 10-ಅಂಕಿಯ ಮೊಬೈಲ್ ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ (ದೂರು ಸಂಖ್ಯೆ ಐಚ್ಛಿಕ) ನಿಮ್ಮ ಎಲ್ಲಾ ದೂರುಗಳ ಇತಿಹಾಸ ಮತ್ತು ಪ್ರಗತಿಯನ್ನು ನೋಡಿ.',
       codeLabel: 'ದೂರು ಸಂಖ್ಯೆ (Complaint ID)',
       codePlaceholder: 'ಉದಾ: HDMC-W65-2026-0001',
       mobileLabel: 'ನೋಂದಾಯಿತ ಮೊಬೈಲ್ ಸಂಖ್ಯೆ',

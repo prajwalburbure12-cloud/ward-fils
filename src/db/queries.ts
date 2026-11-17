@@ -1,4 +1,4 @@
-import { asc, desc, eq, isNotNull, sql } from 'drizzle-orm';
+import { asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 import { db } from './index.ts';
 import {
   announcements,
@@ -492,6 +492,63 @@ export async function getComplaintWithTimelineByCodeAndMobile(
     };
   } catch (error) {
     console.error('Database query failed in tracking complaint:', error);
+    throw new Error('Database query failed. Please try again later.', {
+      cause: error,
+    });
+  }
+}
+
+export async function getComplaintsWithTimelineByMobile(mobile: string) {
+  try {
+    const normalizedMobile = mobile.replace(/\D/g, '').slice(-10);
+    if (!/^[6-9]\d{9}$/.test(normalizedMobile)) {
+      return [];
+    }
+
+    const complaintRows = await db
+      .select()
+      .from(complaints)
+      .where(eq(complaints.mobileNumber, normalizedMobile))
+      .orderBy(desc(complaints.createdAt));
+
+    if (complaintRows.length === 0) {
+      return [];
+    }
+
+    const complaintIds = complaintRows.map((c) => c.id);
+    const timelineRows = await db
+      .select()
+      .from(complaintTimeline)
+      .where(inArray(complaintTimeline.complaintId, complaintIds))
+      .orderBy(asc(complaintTimeline.createdAt));
+
+    const timelineByComplaintId = new Map<number, typeof timelineRows>();
+    for (const entry of timelineRows) {
+      const existing = timelineByComplaintId.get(entry.complaintId) ?? [];
+      existing.push(entry);
+      timelineByComplaintId.set(entry.complaintId, existing);
+    }
+
+    return complaintRows.map((complaint) => ({
+      id: complaint.id,
+      complaintCode: complaint.complaintCode,
+      citizenName: complaint.citizenName,
+      areaStreet: complaint.areaStreet,
+      wardNumber: complaint.wardNumber,
+      category: complaint.category,
+      description: complaint.description,
+      landmark: complaint.landmark,
+      mediaFiles: complaint.mediaFiles ?? [],
+      status: complaint.status,
+      assignedDepartment: complaint.assignedDepartment,
+      latestUpdate: complaint.latestUpdate,
+      resolutionDetails: complaint.resolutionDetails,
+      createdAt: complaint.createdAt,
+      updatedAt: complaint.updatedAt,
+      timeline: timelineByComplaintId.get(complaint.id) ?? [],
+    }));
+  } catch (error) {
+    console.error('Database query failed in tracking mobile history:', error);
     throw new Error('Database query failed. Please try again later.', {
       cause: error,
     });
