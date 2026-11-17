@@ -169,7 +169,7 @@ export const COPY = {
       categoryLabel: 'Complaint Category',
       landmarkLabel: 'Location / Landmark (Optional)',
       landmarkPlaceholder: 'Near temple, school, cross road, or house no.',
-      descLabel: 'Detailed Description of the Problem',
+      descLabel: 'Detailed Description of the Problem (Optional)',
       descPlaceholder:
         'Describe the exact location, severity, and duration of the issue...',
       mediaLabel: 'Upload Photographs or Short Videos',
@@ -322,7 +322,7 @@ export const COPY = {
       categoryLabel: 'ದೂರಿನ ವರ್ಗ',
       landmarkLabel: 'ಸ್ಥಳ / ಗುರುತು (ಐಚ್ಛಿಕ)',
       landmarkPlaceholder: 'ದೇವಸ್ಥಾನ, ಶಾಲೆ, ಕ್ರಾಸ್ ರಸ್ತೆ ಅಥವಾ ಮನೆ ಸಂಖ್ಯೆ',
-      descLabel: 'ಸಮಸ್ಯೆಯ ವಿವರವಾದ ಮಾಹಿತಿ',
+      descLabel: 'ಸಮಸ್ಯೆಯ ವಿವರವಾದ ಮಾಹಿತಿ (ಐಚ್ಛಿಕ)',
       descPlaceholder:
         'ಸಮಸ್ಯೆಯ ನಿಖರವಾದ ಸ್ಥಳ, ತೀವ್ರತೆ ಮತ್ತು ಎಷ್ಟು ದಿನಗಳಿಂದ ಇದೆ ಎಂಬುದನ್ನು ವಿವರಿಸಿ...',
       mediaLabel: 'ಛಾಯಾಚಿತ್ರಗಳು ಅಥವಾ ಕಿರು ವೀಡಿಯೊಗಳನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಿ',

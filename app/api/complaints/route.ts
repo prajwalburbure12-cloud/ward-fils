@@ -9,6 +9,7 @@ import {
 import { generateNextComplaintCode } from '../../../src/db/queries.ts';
 import { authenticateRequest } from '../../../src/lib/auth-server.ts';
 import { checkRateLimit } from '../../../src/lib/rate-limit.ts';
+import { sendComplaintRegistrationSms } from '../../../src/lib/sms.ts';
 import { COMPLAINT_CATEGORIES } from '../../../src/lib/constants.ts';
 
 export const dynamic = 'force-dynamic';
@@ -108,18 +109,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Simple human verification math check
-    const expectedSum = Number(body.captchaA) + Number(body.captchaB);
-    if (
-      !Number.isFinite(expectedSum) ||
-      Number(body.captchaAnswer) !== expectedSum
-    ) {
-      return NextResponse.json(
-        { error: 'Incorrect verification answer. Please try again.' },
-        { status: 400 }
-      );
-    }
-
     const citizenName = String(body.citizenName ?? '').trim();
     const rawMobile = String(body.mobileNumber ?? '').replace(/\D/g, '');
     const areaStreet = String(body.areaStreet ?? '').trim();
@@ -163,11 +152,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (description.length < 15 || description.length > 2500) {
+    if (description.length > 2500) {
       return NextResponse.json(
         {
-          error:
-            'Please provide a detailed description (minimum 15 characters).',
+          error: 'Description cannot exceed 2500 characters.',
         },
         { status: 400 }
       );
@@ -243,6 +231,14 @@ export async function POST(req: NextRequest) {
       updatedBy: 'Citizen Portal',
     });
 
+    const smsResult = await sendComplaintRegistrationSms({
+      mobileNumber: rawMobile,
+      complaintCode: created.complaintCode,
+      citizenName: created.citizenName,
+      areaStreet: created.areaStreet,
+      category: created.category,
+    });
+
     return NextResponse.json(
       {
         complaint: {
@@ -254,6 +250,8 @@ export async function POST(req: NextRequest) {
           status: created.status,
           createdAt: created.createdAt,
         },
+        smsSent: smsResult.sent,
+        maskedMobile: `+91 ******${rawMobile.slice(-4)}`,
       },
       { status: 201 }
     );

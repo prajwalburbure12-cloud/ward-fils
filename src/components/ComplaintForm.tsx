@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import {
   CheckCircle2,
   FileImage,
   FileVideo,
-  ShieldCheck,
+  MessageSquare,
   Trash2,
   Upload,
 } from 'lucide-react';
@@ -29,6 +29,8 @@ interface SubmittedReceipt {
   category: string;
   status: string;
   createdAt: string;
+  smsSent?: boolean;
+  maskedMobile?: string;
 }
 
 export function ComplaintForm() {
@@ -36,7 +38,6 @@ export function ComplaintForm() {
 
   const [citizenName, setCitizenName] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
-  const [confirmMobile, setConfirmMobile] = useState('');
   const [areaStreet, setAreaStreet] = useState('');
   const [category, setCategory] = useState<string>(COMPLAINT_CATEGORIES[0]);
   const [landmark, setLandmark] = useState('');
@@ -44,23 +45,9 @@ export function ComplaintForm() {
   const [mediaFiles, setMediaFiles] = useState<MediaUpload[]>([]);
   const [websiteHoneypot, setWebsiteHoneypot] = useState('');
 
-  const [captchaNums, setCaptchaNums] = useState<{ a: number; b: number }>({
-    a: 4,
-    b: 5,
-  });
-  const [captchaAnswer, setCaptchaAnswer] = useState('');
-
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<SubmittedReceipt | null>(null);
-
-  const refreshCaptcha = () => {
-    setCaptchaNums({
-      a: Math.floor(Math.random() * 8) + 2,
-      b: Math.floor(Math.random() * 8) + 1,
-    });
-    setCaptchaAnswer('');
-  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
@@ -109,7 +96,6 @@ export function ComplaintForm() {
     setError(null);
 
     const cleanedMobile = mobileNumber.replace(/\D/g, '');
-    const cleanedConfirm = confirmMobile.replace(/\D/g, '');
 
     if (citizenName.trim().length < 2) {
       setError('Please enter your full name.');
@@ -119,22 +105,8 @@ export function ComplaintForm() {
       setError('Please enter a valid 10-digit mobile number.');
       return;
     }
-    if (cleanedMobile !== cleanedConfirm) {
-      setError('Mobile numbers do not match. Please verify both fields.');
-      return;
-    }
     if (areaStreet.trim().length < 2) {
       setError('Please specify your Area or Street name.');
-      return;
-    }
-    if (description.trim().length < 15) {
-      setError(
-        'Please describe the civic problem in at least 15 characters.'
-      );
-      return;
-    }
-    if (Number(captchaAnswer) !== captchaNums.a + captchaNums.b) {
-      setError('Incorrect verification sum. Please check the math answer.');
       return;
     }
 
@@ -153,9 +125,6 @@ export function ComplaintForm() {
           description: description.trim(),
           mediaFiles,
           website: websiteHoneypot,
-          captchaA: captchaNums.a,
-          captchaB: captchaNums.b,
-          captchaAnswer: Number(captchaAnswer),
         }),
       });
 
@@ -164,15 +133,17 @@ export function ComplaintForm() {
         throw new Error(data.error || 'Failed to submit complaint.');
       }
 
-      setReceipt(data.complaint);
+      setReceipt({
+        ...data.complaint,
+        smsSent: Boolean(data.smsSent),
+        maskedMobile: data.maskedMobile,
+      });
       setCitizenName('');
       setMobileNumber('');
-      setConfirmMobile('');
       setAreaStreet('');
       setLandmark('');
       setDescription('');
       setMediaFiles([]);
-      refreshCaptcha();
     } catch (err) {
       setError(
         err instanceof Error ? err.message : 'Unable to submit complaint.'
@@ -232,6 +203,17 @@ export function ComplaintForm() {
               </span>
             </div>
           </div>
+
+          {receipt.smsSent && receipt.maskedMobile && (
+            <div className="mt-4 pt-4 border-t border-slate-200 flex items-center gap-2 text-xs sm:text-sm font-medium text-[#15803D]">
+              <MessageSquare className="w-4 h-4 shrink-0" />
+              <span>
+                {lang === 'kn'
+                  ? `ನಿಮ್ಮ ದೂರು ಸಂಖ್ಯೆ (${receipt.complaintCode}) SMS ಮೂಲಕ ${receipt.maskedMobile} ಸಂಖ್ಯೆಗೆ ಕಳುಹಿಸಲಾಗಿದೆ.`
+                  : `SMS confirmation with Complaint ID ${receipt.complaintCode} sent to ${receipt.maskedMobile}.`}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -337,28 +319,6 @@ export function ComplaintForm() {
             className="w-full px-3.5 py-2.5 text-base font-mono tabular-nums border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0B2545]/20 focus:border-[#0B2545]"
           />
         </div>
-
-        <div>
-          <label
-            htmlFor="confirmMobile"
-            className="block text-sm font-semibold text-slate-800 mb-1.5"
-          >
-            {t.register.confirmMobileLabel} *
-          </label>
-          <input
-            id="confirmMobile"
-            type="tel"
-            inputMode="numeric"
-            maxLength={10}
-            required
-            value={confirmMobile}
-            onChange={(e) =>
-              setConfirmMobile(e.target.value.replace(/\D/g, '').slice(0, 10))
-            }
-            placeholder={t.register.confirmMobilePlaceholder}
-            className="w-full px-3.5 py-2.5 text-base font-mono tabular-nums border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#0B2545]/20 focus:border-[#0B2545]"
-          />
-        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -442,12 +402,11 @@ export function ComplaintForm() {
           htmlFor="description"
           className="block text-sm font-semibold text-slate-800 mb-1.5"
         >
-          {t.register.descLabel} *
+          {t.register.descLabel}
         </label>
         <textarea
           id="description"
           rows={4}
-          required
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder={t.register.descPlaceholder}
@@ -525,33 +484,6 @@ export function ComplaintForm() {
             ))}
           </div>
         )}
-      </div>
-
-      {/* Spam Protection Verification */}
-      <div className="p-4 rounded-lg bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-2.5">
-          <ShieldCheck className="w-5 h-5 text-[#15803D] shrink-0" />
-          <div>
-            <div className="text-sm font-semibold text-slate-800">
-              {t.register.captchaLabel}
-            </div>
-            <div className="text-xs text-slate-600">
-              Solve: What is{' '}
-              <span className="font-mono font-bold text-[#0B2545]">
-                {captchaNums.a} + {captchaNums.b}
-              </span>
-              ?
-            </div>
-          </div>
-        </div>
-        <input
-          type="number"
-          required
-          value={captchaAnswer}
-          onChange={(e) => setCaptchaAnswer(e.target.value)}
-          placeholder="Answer"
-          className="w-32 px-3 py-2 text-base font-mono tabular-nums border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:border-[#0B2545]"
-        />
       </div>
 
       <p className="text-xs text-slate-500">{t.register.privacyNotice}</p>
