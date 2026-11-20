@@ -187,7 +187,7 @@ async function seedPortalDefaultsRows() {
             workKn:
               'ಕುಡಿಯುವ ನೀರು ಸರಬರಾಜು, ಭೂಗತ ಒಳಚರಂಡಿ ಸುಧಾರಣೆ, ಬೀದಿ ದೀಪಗಳು, ಸ್ವಚ್ಛತಾ ಅಭಿಯಾನ ಮತ್ತು ನಾಗರಿಕರ ಕುಂದುಕೊರತೆಗಳ ತ್ವರಿತ ಪರಿಹಾರ.',
             phone: '+91 9513613689',
-            email: '',
+            email: 'sunitaburbure12@gmail.com',
             officeHours: '',
             photoUrl: '/assets/aistudio/KIR_5071_sd--_copy_dcb9ba37.jpg',
           },
@@ -231,6 +231,13 @@ async function seedPortalDefaultsRows() {
           },
         ])
         .onConflictDoNothing();
+    } else {
+      await db
+        .update(representatives)
+        .set({ email: 'sunitaburbure12@gmail.com' })
+        .where(
+          sql`${representatives.slotOrder} = 1 AND (${representatives.email} IS NULL OR ${representatives.email} = '' OR ${representatives.email} = 'sunitaburbure12@hmaol.com')`
+        );
     }
 }
 

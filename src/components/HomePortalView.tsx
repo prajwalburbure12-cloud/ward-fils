@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import {
   AnimatePresence,
   animate,
@@ -29,6 +30,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from './LanguageProvider.tsx';
 import { BeforeAfterViewer } from './BeforeAfterViewer.tsx';
+import { WardTransformShowcase } from './WardTransformShowcase.tsx';
 import {
   ImageLightbox,
   type LightboxImageItem,
@@ -39,6 +41,11 @@ import {
   DEFAULT_REPRESENTATIVES,
 } from '../lib/defaults.ts';
 import type { HeroSlideItem } from '../db/schema.ts';
+
+const Hero3DCanvas = dynamic(
+  () => import('./Hero3DCanvas.tsx').then((mod) => mod.Hero3DCanvas),
+  { ssr: false }
+);
 
 export interface PortalSettingsData {
   id: number;
@@ -161,7 +168,20 @@ export function HomePortalView({
 }) {
   const { lang, t } = useLanguage();
   const reduceMotion = useReducedMotion();
+  const heroPointerRef = useRef({ x: 0, y: 0 });
   const [data, setData] = useState<PublicPortalPayload>(initialData);
+
+  const handleHeroPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+    heroPointerRef.current.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    heroPointerRef.current.y = ((e.clientY - rect.top) / rect.height) * 2 - 1;
+  };
+
+  const handleHeroPointerLeave = () => {
+    heroPointerRef.current.x = 0;
+    heroPointerRef.current.y = 0;
+  };
 
   useEffect(() => {
     let active = true;
@@ -362,9 +382,21 @@ export function HomePortalView({
             initial={reduceMotion ? false : { opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: EASE_OUT }}
-            className="bg-[#0B2545] text-white rounded-2xl p-8 sm:p-10 lg:p-12 border border-[#163864] shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 lg:gap-10"
+            onPointerMove={handleHeroPointerMove}
+            onPointerLeave={handleHeroPointerLeave}
+            className="relative overflow-hidden bg-[#0B2545] text-white rounded-2xl p-8 sm:p-10 lg:p-12 border border-[#163864] shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 lg:gap-10"
           >
-            <div className="flex-1 min-w-0 max-w-xl space-y-4">
+            <div className="absolute inset-0 z-0 pointer-events-none">
+              <Hero3DCanvas
+                pointerRef={heroPointerRef}
+                reduceMotion={reduceMotion}
+              />
+            </div>
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 z-[1] pointer-events-none bg-gradient-to-r from-[#0B2545]/95 via-[#0B2545]/75 to-[#0B2545]/35"
+            />
+            <div className="relative z-10 flex-1 min-w-0 max-w-xl space-y-4">
               <motion.p
                 initial={reduceMotion ? false : { opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -435,7 +467,7 @@ export function HomePortalView({
                 transition={{ duration: 0.55, delay: 0.15, ease: EASE_OUT }}
                 onMouseEnter={() => setIsSlidePaused(true)}
                 onMouseLeave={() => setIsSlidePaused(false)}
-                className="w-full max-w-[260px] aspect-square sm:max-w-none sm:w-[270px] sm:aspect-[16/10] md:w-[340px] lg:w-[460px] xl:w-[520px] shrink-0 mx-auto sm:mx-0 rounded-xl overflow-hidden border border-white/15 bg-[#081b34] relative shadow-md group"
+                className="relative z-10 w-full max-w-[260px] aspect-square sm:max-w-none sm:w-[270px] sm:aspect-[16/10] md:w-[340px] lg:w-[460px] xl:w-[520px] shrink-0 mx-auto sm:mx-0 rounded-xl overflow-hidden border border-white/15 bg-[#081b34] shadow-md group"
               >
                 <AnimatePresence mode="wait">
                   <motion.div
@@ -585,6 +617,9 @@ export function HomePortalView({
           ))}
         </div>
       </motion.section>
+
+      {/* 2B. SCROLL-DRIVEN 3D WARD CLEANING & AREA DEVELOPMENT */}
+      <WardTransformShowcase />
 
       {/* 3. OUR PUBLIC REPRESENTATIVES */}
       <motion.section

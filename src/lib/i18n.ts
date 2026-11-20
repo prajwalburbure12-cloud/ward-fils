@@ -138,6 +138,35 @@ export const COPY = {
       photoPending: 'Official Photograph Pending Upload',
       notProvided: 'Updated via Ward Office',
     },
+    transform: {
+      eyebrow: 'Scroll-Driven 3D Ward Transformation',
+      heading: 'Cleaning & Developing Ward 65 Areas',
+      subheading:
+        'Scroll down to watch our 3D civic model transform — from street sweeping and waste clearance to paved roads, underground drainage, LED lighting, and green avenues.',
+      scrollHint: 'Scroll page or select a stage',
+      stages: [
+        {
+          id: 'cleaning',
+          label: '1. Street Cleaning',
+          desc: 'Sweeper drives & door-to-door garbage clearance across market lanes and residential streets.',
+        },
+        {
+          id: 'roads',
+          label: '2. Roads & Drains',
+          desc: 'Asphalt resurfacing, stormwater drainage channels, and clean pedestrian kerbs.',
+        },
+        {
+          id: 'infra',
+          label: '3. LED & Buildings',
+          desc: 'Bright LED streetlights and upgraded ward infrastructure rising block by block.',
+        },
+        {
+          id: 'green',
+          label: '4. Green Ward 65',
+          desc: 'Tree-lined avenues, clean parks, and healthier neighbourhoods for every family.',
+        },
+      ],
+    },
     quickServices: {
       heading: 'Resident Civic Services',
       registerTitle: 'Public Complaint Registration',
@@ -290,6 +319,35 @@ export const COPY = {
       contactLabel: 'ಸಂಪರ್ಕ ವಿವರಗಳು',
       photoPending: 'ಅಧಿಕೃತ ಭಾವಚಿತ್ರ ಶೀಘ್ರದಲ್ಲೇ ಅಪ್‌ಲೋಡ್ ಆಗಲಿದೆ',
       notProvided: 'ವಾರ್ಡ್ ಕಚೇರಿಯ ಮೂಲಕ ನವೀಕರಿಸಲಾಗುತ್ತದೆ',
+    },
+    transform: {
+      eyebrow: 'ಸ್ಕ್ರಾಲ್ ಆಧಾರಿತ 3D ವಾರ್ಡ್ ಪರಿವರ್ತನೆ',
+      heading: 'ವಾರ್ಡ್ ನಂ. 65 ರ ಸ್ವಚ್ಛತೆ ಮತ್ತು ಅಭಿವೃದ್ಧಿ ದೃಶ್ಯಾವಳಿ',
+      subheading:
+        'ಬೀದಿ ಸ್ವಚ್ಛತೆ ಮತ್ತು ಕಸ ತೆರವಿನಿಂದ ಹಿಡಿದು ಡಾಂಬರು ರಸ್ತೆಗಳು, ಒಳಚರಂಡಿ, ಎಲ್‌ಇಡಿ ದೀಪಗಳು ಮತ್ತು ಹಸಿರು ಉದ್ಯಾನವನಗಳ ನಿರ್ಮಾಣವನ್ನು ಸ್ಕ್ರಾಲ್ ಮಾಡುತ್ತಾ ವೀಕ್ಷಿಸಿ.',
+      scrollHint: 'ಪುಟವನ್ನು ಸ್ಕ್ರಾಲ್ ಮಾಡಿ ಅಥವಾ ಹಂತವನ್ನು ಆಯ್ಕೆಮಾಡಿ',
+      stages: [
+        {
+          id: 'cleaning',
+          label: '1. ಬೀದಿ ಸ್ವಚ್ಛತೆ',
+          desc: 'ಮಾರುಕಟ್ಟೆ ಮತ್ತು ವಸತಿ ಬೀದಿಗಳಲ್ಲಿ ಸ್ವಚ್ಛತಾ ವಾಹನ ಮತ್ತು ಕಸ ಸಂಗ್ರಹಣೆ.',
+        },
+        {
+          id: 'roads',
+          label: '2. ರಸ್ತೆ ಮತ್ತು ಚರಂಡಿ',
+          desc: 'ಹೊಸ ಡಾಂಬರು ರಸ್ತೆಗಳು, ಮಳೆನೀರು ಚರಂಡಿಗಳು ಮತ್ತು ಪಾದಚಾರಿ ಮಾರ್ಗಗಳ ಅಭಿವೃದ್ಧಿ.',
+        },
+        {
+          id: 'infra',
+          label: '3. ದೀಪ ಮತ್ತು ಕಟ್ಟಡಗಳು',
+          desc: 'ಎಲ್‌ಇಡಿ ಬೀದಿ ದೀಪಗಳು ಮತ್ತು ಆಧುನಿಕ ವಾರ್ಡ್ ಮೂಲಸೌಕರ್ಯಗಳ ನಿರ್ಮಾಣ.',
+        },
+        {
+          id: 'green',
+          label: '4. ಹಸಿರು ವಾರ್ಡ್ 65',
+          desc: 'ಮರಗಳಿಂದ ಕೂಡಿದ ಸ್ವಚ್ಛ ರಸ್ತೆಗಳು ಮತ್ತು ಆರೋಗ್ಯಕರ ವಾತಾವರಣ.',
+        },
+      ],
     },
     quickServices: {
       heading: 'ನಾಗರಿಕ ಸೇವೆಗಳು',
